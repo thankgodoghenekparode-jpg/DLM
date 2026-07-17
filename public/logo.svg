@@ -1,0 +1,11 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">DLM logo</title>
+  <desc id="desc">Delivery logistics management mark in Zarox red and dark graphite.</desc>
+  <rect x="18" y="18" width="124" height="124" rx="18" fill="#14111d"/>
+  <path d="M42 44H74C101.5 44 119 60.2 119 80C119 99.8 101.5 116 74 116H42V44Z" fill="#f7f7f4"/>
+  <path d="M59 62H74C90.8 62 101.5 69.3 101.5 80C101.5 90.7 90.8 98 74 98H59V62Z" fill="#14111d"/>
+  <path d="M44 122C73.5 89.5 100.8 65.2 132 45" stroke="#c0002d" stroke-width="15" stroke-linecap="round"/>
+  <path d="M43 122C74.5 94.8 102.2 75.1 135 60" stroke="#f05a28" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+  <path d="M36 36H124" stroke="#f7f7f4" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <path d="M36 124H124" stroke="#f7f7f4" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+</svg>

@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #EA580C;
+  --color-primary-light: #F97316;
+  --color-primary-dark: #C2410C;
+  --color-primary-bg: #FFF7ED;
+  --color-surface-dark: #111111;
+  --color-surface-darker: #1A1A1A;
+  --color-surface-card: #FFFFFF;
+  --color-border: #E5E7EB;
+  --color-text-primary: #111111;
+  --color-text-secondary: #6B7280;
+  --color-text-on-dark: #FFFFFF;
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-error: #DC2626;
+  --color-info: #3B82F6;
+}
+
+body {
+  color: var(--color-text-primary);
+  background: #F9FAFB;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.status-pending_assignment { @apply bg-blue-100 text-blue-800; }
+.status-assigned { @apply bg-yellow-100 text-yellow-800; }
+.status-in_transit { @apply bg-orange-100 text-orange-800; }
+.status-delivered { @apply bg-green-100 text-green-800; }
+.status-cancelled { @apply bg-red-100 text-red-800; }
+.status-draft { @apply bg-gray-100 text-gray-800; }
+.status-closed { @apply bg-gray-100 text-gray-800; }
+.status-disputed { @apply bg-purple-100 text-purple-800; }
+
+.status-active { @apply bg-green-100 text-green-800; }
+.status-on_transit { @apply bg-orange-100 text-orange-800; }
+.status-under_maintenance { @apply bg-yellow-100 text-yellow-800; }
+.status-inactive { @apply bg-gray-100 text-gray-800; }
+.status-suspended { @apply bg-red-100 text-red-800; }
+.status-decommissioned { @apply bg-gray-100 text-gray-800; }
