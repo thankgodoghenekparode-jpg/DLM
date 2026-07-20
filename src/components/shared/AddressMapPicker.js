@@ -9,10 +9,7 @@ const TileLayer = dynamic(() => import("react-leaflet").then((m) => m.TileLayer)
 const Marker = dynamic(() => import("react-leaflet").then((m) => m.Marker), { ssr: false });
 
 function DraggableMarker({ position, onDragEnd }) {
-  const [pos, setPos] = useState(position);
   const markerRef = useRef(null);
-
-  useEffect(() => { setPos(position); }, [position]);
 
   const eventHandlers = {
     dragend() {
@@ -23,19 +20,17 @@ function DraggableMarker({ position, onDragEnd }) {
     },
   };
 
-  return <Marker position={pos} draggable={true} eventHandlers={eventHandlers} ref={markerRef} />;
+  return <Marker position={position} draggable={true} eventHandlers={eventHandlers} ref={markerRef} />;
 }
 
 const FlyTo = dynamic(() => import("react-leaflet").then((m) => {
   function FlyToComponent({ position }) {
     const map = m.useMap();
-    const mapRef = useRef(map);
-    mapRef.current = map;
     useEffect(() => {
-      if (position && mapRef.current) {
-        mapRef.current.flyTo(position, 15, { duration: 1 });
+      if (position && map) {
+        map.flyTo(position, 15, { duration: 1 });
       }
-    }, [position]);
+    }, [map, position]);
     return null;
   }
   return FlyToComponent;
@@ -44,15 +39,13 @@ const FlyTo = dynamic(() => import("react-leaflet").then((m) => {
 const MapEvents = dynamic(() => import("react-leaflet").then((m) => {
   function MapEventsComponent({ onClick }) {
     const map = m.useMap();
-    const cbRef = useRef(onClick);
-    cbRef.current = onClick;
     useEffect(() => {
       function handleClick(e) {
-        if (cbRef.current) cbRef.current({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+        if (onClick) onClick({ latitude: e.latlng.lat, longitude: e.latlng.lng });
       }
       map.on("click", handleClick);
       return () => map.off("click", handleClick);
-    }, [map]);
+    }, [map, onClick]);
     return null;
   }
   return MapEventsComponent;
@@ -77,9 +70,18 @@ export default function AddressMapPicker({
   const [searchError, setSearchError] = useState(null);
   const debounceRef = useRef(null);
 
-  useEffect(() => { if (controlledAddress !== undefined) setAddress(controlledAddress); }, [controlledAddress]);
-  useEffect(() => { if (controlledLat !== undefined) setLat(controlledLat); }, [controlledLat]);
-  useEffect(() => { if (controlledLng !== undefined) setLng(controlledLng); }, [controlledLng]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (controlledAddress !== undefined) setAddress(controlledAddress);
+  }, [controlledAddress]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (controlledLat !== undefined) setLat(controlledLat);
+  }, [controlledLat]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (controlledLng !== undefined) setLng(controlledLng);
+  }, [controlledLng]);
 
   const emitChange = useCallback((next) => { if (onChange) onChange(next); }, [onChange]);
 

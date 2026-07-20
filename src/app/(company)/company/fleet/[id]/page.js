@@ -9,7 +9,7 @@ import { Truck, Activity, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { VEHICLE_TYPES, VEHICLE_STATUSES, VEHICLE_OWNERSHIP, getLabel } from "@/lib/constants";
 
-export default function FleetDetailPage({ params }) {
+export default function VehicleDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
   const [vehicle, setVehicle] = useState(null);
@@ -62,7 +62,7 @@ export default function FleetDetailPage({ params }) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
-        <button onClick={() => router.push("/company/fleet")} className="text-sm text-gray-500 hover:text-gray-700 mb-2">← Fleet</button>
+        <button onClick={() => router.push("/company/fleet")} className="text-sm text-gray-500 hover:text-gray-700 mb-2">← Vehicles</button>
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-gray-900">{vehicle.plateNumber}</h1>
           <StatusBadge status={vehicle.status} />
@@ -97,7 +97,7 @@ export default function FleetDetailPage({ params }) {
       </div>
 
       <div className="mt-6 flex gap-3">
-        <Button variant="secondary" onClick={() => router.push("/company/fleet")}>Back to Fleet</Button>
+        <Button variant="secondary" onClick={() => router.push("/company/fleet")}>Back to Vehicles</Button>
         <Button variant="secondary" onClick={openEdit}><Pencil size={14} className="mr-1" /> Edit Vehicle</Button>
       </div>
 

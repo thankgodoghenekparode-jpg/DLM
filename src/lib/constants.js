@@ -1,6 +1,6 @@
 export const COMPANY_ROLES = [
   { value: "COMPANY_ADMIN", label: "Company Admin" },
-  { value: "FLEET_MANAGER", label: "Fleet Manager" },
+  { value: "FLEET_MANAGER", label: "Vehicle Manager" },
   { value: "DISPATCH_MANAGER", label: "Dispatch Manager" },
   { value: "BRANCH_ADMIN", label: "Branch Admin" },
 ];
@@ -14,7 +14,7 @@ export const ALL_ROLES = [
   { value: "SUPER_ADMIN", label: "Super Admin" },
   { value: "PLATFORM_SUPPORT", label: "Platform Support" },
   { value: "COMPANY_ADMIN", label: "Company Admin" },
-  { value: "FLEET_MANAGER", label: "Fleet Manager" },
+  { value: "FLEET_MANAGER", label: "Vehicle Manager" },
   { value: "DISPATCH_MANAGER", label: "Dispatch Manager" },
   { value: "BRANCH_ADMIN", label: "Branch Admin" },
   { value: "DRIVER", label: "Driver" },
@@ -143,8 +143,8 @@ export function getValueByLabel(list, label) {
 }
 
 export const ROLE_PERMISSIONS = {
-  SUPER_ADMIN: ["platform:dashboard", "platform:companies", "platform:change-requests", "platform:users", "platform:wallets", "platform:plans", "platform:audit-log", "platform:settings", "platform:profile"],
-  PLATFORM_SUPPORT: ["platform:dashboard", "platform:companies", "platform:change-requests", "platform:audit-log", "platform:profile"],
+  SUPER_ADMIN: ["platform:dashboard", "platform:companies", "platform:change-requests", "platform:users", "platform:wallets", "platform:audit-log", "platform:settings", "platform:profile"],
+  PLATFORM_SUPPORT: ["platform:dashboard", "platform:companies", "platform:change-requests", "platform:wallets", "platform:audit-log", "platform:profile"],
   COMPANY_ADMIN: ["company:dashboard", "company:create-parcel", "company:fleet", "company:drivers", "company:tickets", "company:tracker", "company:reports", "company:wallet", "company:branches", "company:users", "company:profile", "company:change-requests", "company:notifications", "company:settings"],
   FLEET_MANAGER: ["company:dashboard", "company:create-parcel", "company:fleet", "company:drivers", "company:tickets", "company:tracker", "company:reports", "company:notifications"],
   DISPATCH_MANAGER: ["company:dashboard", "company:create-parcel", "company:drivers", "company:tickets", "company:tracker", "company:notifications"],

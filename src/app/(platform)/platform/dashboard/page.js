@@ -19,11 +19,10 @@ export default function PlatformDashboard() {
 
   useEffect(() => {
     const load = async () => {
-      const [summaryData, tenantData, userData, scorecardData] = await Promise.all([
+      const [summaryData, tenantData, userData] = await Promise.all([
         api.get("/metrics/platform-summary").catch(() => null),
         api.get("/platform/tenants").catch(() => []),
         api.get("/platform/users").catch(() => []),
-        api.get("/metrics/driver-scorecards").catch(() => []),
       ]);
       if (summaryData) {
         const metricMap = {};
@@ -36,7 +35,7 @@ export default function PlatformDashboard() {
       }
       setTenants(Array.isArray(tenantData) ? tenantData : []);
       setStaffCount(Array.isArray(userData) ? userData.filter((u) => u.role !== "SUPER_ADMIN").length : 0);
-      setScorecards(Array.isArray(scorecardData) ? scorecardData : []);
+      setScorecards([]);
       setLoading(false);
     };
     load();

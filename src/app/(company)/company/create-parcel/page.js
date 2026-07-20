@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/shared/Button";
 import { api } from "@/lib/api";
@@ -9,7 +8,6 @@ import { useAuth } from "@/context/AuthContext";
 import {
   ArrowLeft,
   CalendarDays,
-  CheckCircle2,
   CreditCard,
   ImageIcon,
   Loader2,
@@ -38,8 +36,9 @@ const emptyForm = {
   receiverEmail: "",
   itemDescription: "",
   length: "",
+  breadth: "",
+  height: "",
   weight: "",
-  units: "1",
   paymentOption: "PAY_NOW",
   priceAmount: "",
 };
@@ -70,7 +69,6 @@ export default function CreateParcelPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [createdTicket, setCreatedTicket] = useState(null);
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -106,7 +104,7 @@ export default function CreateParcelPage() {
     [drivers, form.driverId]
   );
 
-  const totalWeight = Number(form.weight || 0) * Number(form.units || 1);
+  const itemWeight = Number(form.weight || 0);
   const canCreate = Boolean(
     form.originBranchId &&
       form.destinationBranchId &&
@@ -119,8 +117,9 @@ export default function CreateParcelPage() {
       form.receiverPhone.trim() &&
       form.itemDescription.trim() &&
       Number(form.length) > 0 &&
-      Number(form.weight) > 0 &&
-      Number(form.units) > 0
+      Number(form.breadth) > 0 &&
+      Number(form.height) > 0 &&
+      Number(form.weight) > 0
   );
 
   const update = (field, value) => {
@@ -161,7 +160,7 @@ export default function CreateParcelPage() {
         originAddress: originBranch?.address || originBranch?.name || "",
         destinationAddress: destinationBranch?.address || destinationBranch?.name || "",
         cargoDescription: form.itemDescription.trim(),
-        cargoWeightKg: totalWeight,
+        cargoWeightKg: itemWeight,
         consignee: {
           name: form.receiverName.trim(),
           phone: form.receiverPhone.trim(),
@@ -190,9 +189,9 @@ export default function CreateParcelPage() {
         description: form.itemDescription.trim(),
         weight: Number(form.weight),
         size: {
-          width: Number(form.units),
+          width: Number(form.breadth),
           length: Number(form.length),
-          height: 1,
+          height: Number(form.height),
         },
         senderName: form.senderName.trim(),
         senderEmail: form.senderEmail.trim() || undefined,
@@ -209,7 +208,7 @@ export default function CreateParcelPage() {
         driverId: form.driverId,
       });
 
-      setCreatedTicket(ticket);
+      router.push(`/company/create-parcel/success/${ticket.id}`);
     } catch (err) {
       setError(err.message || "Failed to create parcel");
     } finally {
@@ -225,35 +224,6 @@ export default function CreateParcelPage() {
     );
   }
 
-  if (createdTicket) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 mx-auto rounded-full bg-green-100 text-green-700 flex items-center justify-center">
-            <CheckCircle2 size={26} />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 mt-4">Parcel Created</h1>
-          <p className="text-sm text-gray-500 mt-1">Ticket number generated automatically.</p>
-          <p className="text-2xl font-bold text-primary mt-5">{createdTicket.ticketNumber || createdTicket.id}</p>
-          <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center">
-            <Link href={`/company/tickets/${createdTicket.id}`}>
-              <Button>View Ticket</Button>
-            </Link>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setCreatedTicket(null);
-                setForm(emptyForm);
-                setImageFile(null);
-              }}
-            >
-              Create Another
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -360,18 +330,27 @@ export default function CreateParcelPage() {
             </h2>
             <div className="space-y-4">
               <textarea value={form.itemDescription} onChange={(e) => update("itemDescription", e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Item description *" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Length *</label>
-                  <input type="number" min="0" step="0.01" value={form.length} onChange={(e) => update("length", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0.00" />
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Size</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Length *</label>
+                      <input type="number" min="0" step="0.01" value={form.length} onChange={(e) => update("length", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0.00" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Breadth *</label>
+                      <input type="number" min="0" step="0.01" value={form.breadth} onChange={(e) => update("breadth", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0.00" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Height *</label>
+                      <input type="number" min="0" step="0.01" value={form.height} onChange={(e) => update("height", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0.00" />
+                    </div>
+                  </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Weight (kg) *</label>
-                  <input type="number" min="0" step="0.01" value={form.weight} onChange={(e) => update("weight", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0.00" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Units *</label>
-                  <input type="number" min="1" step="1" value={form.units} onChange={(e) => update("units", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="1" />
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Weight</p>
+                  <input type="number" min="0" step="0.01" value={form.weight} onChange={(e) => update("weight", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Weight in kg *" />
                 </div>
               </div>
               <label className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary/60">
@@ -437,7 +416,7 @@ export default function CreateParcelPage() {
                 <Package size={15} className="text-gray-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-gray-500">Item</p>
-                  <p className="font-medium text-gray-900">{form.units || 0} unit(s), {totalWeight || 0} kg total</p>
+                  <p className="font-medium text-gray-900">{itemWeight || 0} kg, {form.length || 0} x {form.breadth || 0} x {form.height || 0}</p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -451,7 +430,7 @@ export default function CreateParcelPage() {
             <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
               <Button className="w-full" disabled={!canCreate || submitting} onClick={handleCreate}>
                 {submitting ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
-                Create Parcel
+                Submit Parcel
               </Button>
               <Button variant="secondary" className="w-full" disabled={submitting} onClick={() => router.push("/company/dashboard")}>
                 Cancel

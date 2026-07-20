@@ -4,12 +4,47 @@ import { useState, useEffect, useMemo } from "react";
 import KPICard from "@/components/shared/KPICard";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { Ticket, CheckCircle2, Truck, Wallet, Loader2, PackagePlus } from "lucide-react";
+import { Ticket, CheckCircle2, Truck, Wallet, Loader2, PackagePlus, BarChart3, Settings, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { TICKET_PRIORITIES, getLabel } from "@/lib/constants";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const QUICK_ACTIONS = [
+  {
+    title: "Create Parcel",
+    description: "Start a new delivery request",
+    href: "/company/create-parcel",
+    icon: PackagePlus,
+    color: "bg-primary text-white",
+    iconWrap: "bg-white/20 text-white",
+  },
+  {
+    title: "Wallet",
+    description: "Balance and transactions",
+    href: "/company/wallet",
+    icon: Wallet,
+    color: "bg-emerald-600 text-white",
+    iconWrap: "bg-white/20 text-white",
+  },
+  {
+    title: "Reports",
+    description: "Trips, billing, and exports",
+    href: "/company/reports",
+    icon: BarChart3,
+    color: "bg-slate-900 text-white",
+    iconWrap: "bg-white/20 text-white",
+  },
+  {
+    title: "Settings",
+    description: "Company preferences",
+    href: "/company/settings",
+    icon: Settings,
+    color: "bg-amber-500 text-white",
+    iconWrap: "bg-white/25 text-white",
+  },
+];
 
 function getMonthlyCounts(items, dateField) {
   const counts = new Array(12).fill(0);
@@ -76,7 +111,7 @@ export default function CompanyDashboard() {
   const activeVehicles = vehicles.filter(
     (v) => v.status === "ACTIVE" || v.status === "ON_TRANSIT"
   ).length;
-  const fleetUtilization = totalVehicles
+  const vehicleUtilization = totalVehicles
     ? Math.round((activeVehicles / totalVehicles) * 100)
     : 0;
 
@@ -136,15 +171,32 @@ export default function CompanyDashboard() {
           <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1">Welcome back, here&apos;s your overview.</p>
         </div>
-        <Link href="/company/create-parcel" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
-          <PackagePlus size={16} /> Create Parcel
-        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {QUICK_ACTIONS.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link key={action.href} href={action.href} className={`${action.color} rounded-xl p-5 min-h-[132px] flex flex-col justify-between shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${action.iconWrap}`}>
+                  <Icon size={22} />
+                </div>
+                <ArrowRight size={18} className="opacity-80" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">{action.title}</h2>
+                <p className="text-sm opacity-85 mt-1">{action.description}</p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Active Tickets" value={metrics.openTickets} icon={Ticket} subtitle="Require attention" />
         <KPICard title="Active Trips" value={metrics.activeTrips} icon={CheckCircle2} subtitle="In progress" />
-        <KPICard title="Fleet Utilization" value={`${fleetUtilization}%`} icon={Truck} subtitle={`${activeVehicles} of ${totalVehicles} vehicles`} />
+        <KPICard title="Vehicle Utilization" value={`${vehicleUtilization}%`} icon={Truck} subtitle={`${activeVehicles} of ${totalVehicles} vehicles`} />
         <KPICard title="Wallet Balance" value={`₦${metrics.walletBalance.toLocaleString()}`} icon={Wallet} subtitle="Available balance" />
       </div>
 

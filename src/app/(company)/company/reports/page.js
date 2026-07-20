@@ -216,7 +216,7 @@ export default function ReportsPage() {
           </button>
           <button onClick={exportVehicles} className="border border-gray-200 rounded-lg p-4 text-left hover:border-primary/50 hover:bg-primary/5">
             <FileText size={20} className="text-primary mb-2" />
-            <p className="text-sm font-medium text-gray-900">Fleet Report</p>
+            <p className="text-sm font-medium text-gray-900">Vehicle Report</p>
             <p className="text-xs text-gray-500 mt-1">Export all vehicles as CSV</p>
           </button>
           <button onClick={exportDrivers} className="border border-gray-200 rounded-lg p-4 text-left hover:border-primary/50 hover:bg-primary/5">

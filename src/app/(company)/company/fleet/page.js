@@ -11,7 +11,7 @@ import { VEHICLE_TYPES, VEHICLE_OWNERSHIP, getLabel } from "@/lib/constants";
 
 const STEPS = ["Vehicle Info", "Specs & Review"];
 
-export default function FleetPage() {
+export default function VehiclePage() {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -97,7 +97,7 @@ export default function FleetPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Fleet Management</h1>
+          <h1 className="text-xl font-bold text-gray-900">Vehicle Management</h1>
           <p className="text-sm text-gray-500 mt-1">Manage your vehicles</p>
         </div>
         <Button onClick={() => { setStep(1); setForm({ plateNumber: "", makeModel: "", type: "", ownership: "", capacityTonnage: "", year: "" }); setErrors({}); setShowAdd(true); }}><Plus size={16} className="mr-1" /> Add Vehicle</Button>

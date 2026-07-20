@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { LayoutDashboard, Building2, FileEdit, Users, User, Wallet, FileText, ScrollText, Settings } from "lucide-react";
+import { LayoutDashboard, Building2, FileEdit, Users, User, Wallet, ScrollText, Settings } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/platform/dashboard", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "PLATFORM_SUPPORT"] },
@@ -12,8 +12,7 @@ const NAV_ITEMS = [
   { label: "Change Requests", href: "/platform/change-requests", icon: FileEdit, roles: ["SUPER_ADMIN", "PLATFORM_SUPPORT"] },
   { label: "Platform Users", href: "/platform/users", icon: Users, roles: ["SUPER_ADMIN"] },
   { label: "Profile", href: "/platform/profile", icon: User, roles: ["SUPER_ADMIN", "PLATFORM_SUPPORT"] },
-  { label: "Wallets", href: "/platform/wallets", icon: Wallet, roles: ["SUPER_ADMIN"] },
-  { label: "Plans & Billing", href: "/platform/plans", icon: FileText, roles: ["SUPER_ADMIN"] },
+  { label: "Wallets", href: "/platform/wallets", icon: Wallet, roles: ["SUPER_ADMIN", "PLATFORM_SUPPORT"] },
   { label: "Audit Log", href: "/platform/audit-log", icon: ScrollText, roles: ["SUPER_ADMIN", "PLATFORM_SUPPORT"] },
   { label: "Settings", href: "/platform/settings", icon: Settings, roles: ["SUPER_ADMIN"] },
 ];
