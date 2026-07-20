@@ -26,7 +26,7 @@ const PAYMENT_OPTIONS = [
   { value: "PAY_AT_DELIVERY", label: "Pay at Delivery" },
 ];
 
-const MAX_LOAD_ITEMS = 50;
+const MAX_LOAD_ITEMS = 500;
 
 const emptyForm = {
   originBranchId: "",
