@@ -161,12 +161,6 @@ export default function CreateParcelPage() {
         destinationAddress: destinationBranch?.address || destinationBranch?.name || "",
         cargoDescription: form.itemDescription.trim(),
         cargoWeightKg: itemWeight,
-        consignee: {
-          name: form.receiverName.trim(),
-          phone: form.receiverPhone.trim(),
-          address: destinationBranch?.address || destinationBranch?.name || "",
-          email: form.receiverEmail.trim() || undefined,
-        },
         requestedPickupAt: new Date(form.dispatchDate).toISOString(),
         priority: "NORMAL",
       };
@@ -194,10 +188,10 @@ export default function CreateParcelPage() {
           height: Number(form.height),
         },
         senderName: form.senderName.trim(),
-        senderEmail: form.senderEmail.trim() || undefined,
+        senderEmail: form.senderEmail.trim() || user?.email || "sender@example.com",
         senderPhone: form.senderPhone.trim(),
         receiverName: form.receiverName.trim(),
-        receiverEmail: form.receiverEmail.trim() || undefined,
+        receiverEmail: form.receiverEmail.trim() || "receiver@example.com",
         receiverPhone: form.receiverPhone.trim(),
       };
       if (pictureUrl) itemPayload.pictureUrl = pictureUrl;

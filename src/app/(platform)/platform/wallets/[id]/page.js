@@ -141,8 +141,7 @@ export default function WalletDetailPage({ params }) {
     try {
       await api.post("/platform/wallet-adjustments", {
         tenantId: wallet.tenantId || id,
-        amount: adjustmentAmount,
-        type,
+        amount: signedAmount,
         reason,
       });
       patchLocalBalance(nextBalance, type, reason, signedAmount);
