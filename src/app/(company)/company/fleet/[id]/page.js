@@ -42,7 +42,7 @@ export default function VehicleDetailPage({ params }) {
     try {
       const payload = {};
       if (form.makeModel !== (vehicle.makeModel || "")) payload.makeModel = form.makeModel;
-      if (form.capacityTonnage !== (vehicle.capacityTonnage ?? "")) payload.capacityTonnage = form.capacityTonnage !== "" ? Number(form.capacityTonnage) : null;
+      if (form.capacityTonnage !== (vehicle.capacityTonnage ?? "") && form.capacityTonnage !== "") payload.capacityTonnage = Number(form.capacityTonnage);
       if (form.status !== vehicle.status) payload.status = form.status;
       if (form.currentDriverId !== (vehicle.currentDriverId || "")) payload.currentDriverId = form.currentDriverId || undefined;
 

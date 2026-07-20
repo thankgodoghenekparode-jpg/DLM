@@ -63,19 +63,25 @@ export default function DriverDetailPage({ params }) {
       if (form.phone !== driver.phone) body.phone = form.phone;
       if (form.email !== driver.email) body.email = form.email;
       if (form.licenseNumber !== driver.licenseNumber) body.licenseNumber = form.licenseNumber;
-      if (form.licenseExpiresAt !== (driver.licenseExpiresAt?.slice(0, 16) || "")) body.licenseExpiresAt = new Date(form.licenseExpiresAt).toISOString();
-      if (form.dateOfBirth !== (driver.dateOfBirth?.slice(0, 10) || "")) body.dateOfBirth = new Date(form.dateOfBirth).toISOString();
-      if (form.currentVehicleId !== (driver.currentVehicleId || "")) body.currentVehicleId = form.currentVehicleId || null;
+      if (form.licenseExpiresAt !== (driver.licenseExpiresAt?.slice(0, 16) || "") && form.licenseExpiresAt) body.licenseExpiresAt = new Date(form.licenseExpiresAt).toISOString();
+      if (form.dateOfBirth !== (driver.dateOfBirth?.slice(0, 10) || "") && form.dateOfBirth) body.dateOfBirth = new Date(form.dateOfBirth).toISOString();
+      if (form.currentVehicleId !== (driver.currentVehicleId || "") && form.currentVehicleId) body.currentVehicleId = form.currentVehicleId;
       if (form.status !== driver.status) body.status = form.status;
       const ecChanged = form.ecName !== (driver.emergencyContact?.name || "")
         || form.ecPhone !== (driver.emergencyContact?.phone || "")
         || form.ecAddress !== (driver.emergencyContact?.address || "")
         || form.ecEmail !== (driver.emergencyContact?.email || "");
       if (ecChanged) {
-        body.emergencyContact = {};
-        if (form.ecName) body.emergencyContact.name = form.ecName;
-        if (form.ecPhone) body.emergencyContact.phone = form.ecPhone;
-        if (form.ecAddress) body.emergencyContact.address = form.ecAddress;
+        if (!form.ecName || !form.ecPhone || !form.ecAddress) {
+          alert("Emergency contact requires name, phone, and address.");
+          setEditSubmitting(false);
+          return;
+        }
+        body.emergencyContact = {
+          name: form.ecName,
+          phone: form.ecPhone,
+          address: form.ecAddress,
+        };
         if (form.ecEmail) body.emergencyContact.email = form.ecEmail;
       }
       if (Object.keys(body).length === 0) { setShowEdit(false); return; }
