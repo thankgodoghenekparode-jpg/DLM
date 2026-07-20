@@ -47,14 +47,6 @@ function branchLabel(branch) {
   return [branch.name, branch.address].filter(Boolean).join(" - ") || branch.id;
 }
 
-function branchGeo(branch) {
-  const geo = branch?.geolocation || branch?.geo;
-  if (!geo) return undefined;
-  const latitude = Number(geo.latitude);
-  const longitude = Number(geo.longitude);
-  if (Number.isNaN(latitude) || Number.isNaN(longitude)) return undefined;
-  return { latitude, longitude };
-}
 
 export default function CreateParcelPage() {
   const router = useRouter();
@@ -157,24 +149,10 @@ export default function CreateParcelPage() {
       const pictureUrl = await uploadImage();
       const ticketPayload = {
         originBranchId: form.originBranchId,
+        destinationBranchId: form.destinationBranchId,
         originAddress: originBranch?.address || originBranch?.name || "",
         destinationAddress: destinationBranch?.address || destinationBranch?.name || "",
-        cargoDescription: form.itemDescription.trim(),
-        cargoWeightKg: itemWeight,
-        requestedPickupAt: new Date(form.dispatchDate).toISOString(),
-        priority: "NORMAL",
       };
-
-      const originGeo = branchGeo(originBranch);
-      const destinationGeo = branchGeo(destinationBranch);
-      if (originGeo) ticketPayload.originGeo = originGeo;
-      if (destinationGeo) ticketPayload.destinationGeo = destinationGeo;
-      if (form.priceAmount) {
-        ticketPayload.customerPrice = {
-          amount: Number(form.priceAmount),
-          currency: "NGN",
-        };
-      }
 
       const ticket = await api.post("/tickets", ticketPayload);
 
@@ -182,6 +160,7 @@ export default function CreateParcelPage() {
         ticketId: ticket.id,
         description: form.itemDescription.trim(),
         weight: Number(form.weight),
+        amount: Number(form.priceAmount || 0),
         size: {
           width: Number(form.breadth),
           length: Number(form.length),

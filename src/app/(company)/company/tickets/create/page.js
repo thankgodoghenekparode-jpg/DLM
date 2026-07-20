@@ -3,10 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/shared/Button";
-import AddressMapPicker from "@/components/shared/AddressMapPicker";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { TICKET_PRIORITIES, getLabel } from "@/lib/constants";
 import { ArrowLeft, Plus, Trash2, Package, Weight, Ruler, Loader2, CheckCircle } from "lucide-react";
 
 let itemCounter = 0;
@@ -22,6 +20,10 @@ const emptyItem = () => ({
 
 const STEPS = ["Ticket Details", "Add Items", "Assign Driver"];
 
+function branchLabel(branch) {
+  return [branch.name, branch.address].filter(Boolean).join(" - ") || branch.id;
+}
+
 export default function CreateTicketPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -31,11 +33,11 @@ export default function CreateTicketPage() {
   const [error, setError] = useState(null);
 
   // Step 1 fields
+  const [branches, setBranches] = useState([]);
+  const [originBranchId, setOriginBranchId] = useState("");
+  const [destinationBranchId, setDestinationBranchId] = useState("");
   const [originAddress, setOriginAddress] = useState("");
-  const [originGeo, setOriginGeo] = useState(null);
   const [destinationAddress, setDestinationAddress] = useState("");
-  const [destinationGeo, setDestinationGeo] = useState(null);
-  const [priority, setPriority] = useState("NORMAL");
   const [cargoDescription, setCargoDescription] = useState("");
   const [requestedPickupAt, setRequestedPickupAt] = useState("");
   const [customerPriceAmount, setCustomerPriceAmount] = useState("");
@@ -53,6 +55,13 @@ export default function CreateTicketPage() {
 
   // Created ticket
   const [createdTicketId, setCreatedTicketId] = useState(null);
+
+  useEffect(() => {
+    if (!user?.tenantId) return;
+    api.get(`/tenants/${user.tenantId}`)
+      .then((data) => setBranches(Array.isArray(data?.branches) ? data.branches : []))
+      .catch(() => setBranches([]));
+  }, [user?.tenantId]);
 
   useEffect(() => {
     if (step === 3) {
@@ -80,24 +89,18 @@ export default function CreateTicketPage() {
     setItems((prev) => (prev.filter((i) => i._key !== key)));
   };
 
-  const canProceedStep1 = originAddress.trim() && destinationAddress.trim() && cargoDescription.trim() && requestedPickupAt;
+  const canProceedStep1 = originBranchId && destinationBranchId && originAddress.trim() && destinationAddress.trim() && cargoDescription.trim() && requestedPickupAt;
 
   const handleCreateTicket = async () => {
     setSubmitting(true);
     setError(null);
     try {
       const body = {
+        originBranchId,
         originAddress: originAddress.trim(),
+        destinationBranchId,
         destinationAddress: destinationAddress.trim(),
-        cargoDescription: cargoDescription.trim(),
-        requestedPickupAt: requestedPickupAt ? new Date(requestedPickupAt).toISOString() : undefined,
-        priority,
       };
-      if (originGeo) body.originGeo = originGeo;
-      if (destinationGeo) body.destinationGeo = destinationGeo;
-      if (customerPriceAmount) {
-        body.customerPrice = { amount: parseFloat(customerPriceAmount), currency: "NGN" };
-      }
       const ticket = await api.post("/tickets", body);
       setCreatedTicketId(ticket.id);
       setStep(2);
@@ -117,6 +120,7 @@ export default function CreateTicketPage() {
           ticketId: createdTicketId,
           description: item.description,
           weight: item.weight,
+          amount: parseFloat(customerPriceAmount) || 0,
           size: {
             width: parseFloat(item.sizeW) || 1,
             length: parseFloat(item.sizeL) || 1,
@@ -186,52 +190,58 @@ export default function CreateTicketPage() {
           <h3 className="text-sm font-semibold text-gray-900">Route & Ticket Info</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-gray-500">Origin Address & Location *</label>
-              <div className="mt-1">
-                <AddressMapPicker
-                  address={originAddress}
-                  latitude={originGeo?.latitude}
-                  longitude={originGeo?.longitude}
-                  onChange={({ address, latitude, longitude }) => {
-                    setOriginAddress(address);
-                    setOriginGeo({ latitude, longitude });
-                  }}
-                  required
-                />
-              </div>
+              <label className="text-xs text-gray-500">Origin Branch *</label>
+              <select
+                value={originBranchId}
+                onChange={(e) => {
+                  const branch = branches.find((b) => b.id === e.target.value);
+                  setOriginBranchId(e.target.value);
+                  setOriginAddress(branch?.address || branch?.name || "");
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 bg-white"
+              >
+                <option value="">Select branch</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>{branchLabel(branch)}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="text-xs text-gray-500">Destination Address & Location *</label>
-              <div className="mt-1">
-                <AddressMapPicker
-                  address={destinationAddress}
-                  latitude={destinationGeo?.latitude}
-                  longitude={destinationGeo?.longitude}
-                  onChange={({ address, latitude, longitude }) => {
-                    setDestinationAddress(address);
-                    setDestinationGeo({ latitude, longitude });
-                  }}
-                  required
-                />
-              </div>
+              <label className="text-xs text-gray-500">Destination Branch *</label>
+              <select
+                value={destinationBranchId}
+                onChange={(e) => {
+                  const branch = branches.find((b) => b.id === e.target.value);
+                  setDestinationBranchId(e.target.value);
+                  setDestinationAddress(branch?.address || branch?.name || "");
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 bg-white"
+              >
+                <option value="">Select branch</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>{branchLabel(branch)}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-xs text-gray-500">Cargo Description *</label>
               <input value={cargoDescription} onChange={(e) => setCargoDescription(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="e.g. Electronics equipment" />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Priority</label>
-              <select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1">
-                {TICKET_PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-              </select>
-            </div>
-            <div>
               <label className="text-xs text-gray-500">Requested Pickup At *</label>
               <input type="datetime-local" value={requestedPickupAt} onChange={(e) => setRequestedPickupAt(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Customer Price (₦)</label>
+              <label className="text-xs text-gray-500">Customer Price (NGN)</label>
               <input type="number" min="0" value={customerPriceAmount} onChange={(e) => setCustomerPriceAmount(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="Optional" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Origin Address</label>
+              <input value={originAddress} readOnly className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm mt-1" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Destination Address</label>
+              <input value={destinationAddress} readOnly className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm mt-1" />
             </div>
           </div>
         </div>
@@ -321,7 +331,6 @@ export default function CreateTicketPage() {
             <h3 className="text-sm font-semibold text-gray-900">Ticket Summary</h3>
             <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Route</span><span className="font-medium">{originAddress || "—"} → {destinationAddress || "—"}</span></div>
-              <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Priority</span><span className="font-medium">{getLabel(TICKET_PRIORITIES, priority)}</span></div>
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Cargo</span><span className="font-medium">{cargoDescription || "—"}</span></div>
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Pickup</span><span className="font-medium">{requestedPickupAt ? new Date(requestedPickupAt).toLocaleString() : "—"}</span></div>
               {customerPriceAmount && <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Price</span><span className="font-medium">₦{parseFloat(customerPriceAmount).toLocaleString()}</span></div>}
