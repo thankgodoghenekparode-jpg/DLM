@@ -80,11 +80,6 @@ export default function DriverLoginPage() {
           </div>
           <Button type="submit" className="w-full" disabled={loading}>{loading ? "Signing in..." : "Sign In"}</Button>
         </form>
-        <p className="text-xs text-center text-gray-400 mt-4">
-          <Link href="/company/login" className="hover:underline">Company Portal</Link>
-          {" · "}
-          <Link href="/platform/login" className="hover:underline">Platform Admin</Link>
-        </p>
       </div>
     </div>
   );

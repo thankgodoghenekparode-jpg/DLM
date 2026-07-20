@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import DriverSidebar from "./DriverSidebar";
-import { Menu, PanelLeftClose, ClipboardList, History, User, Bell, Loader2 } from "lucide-react";
+import { Menu, PanelLeftClose, ClipboardList, History, User, Bell, Loader2, LogOut } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Today's Trips", href: "/driver/trips", icon: ClipboardList },
@@ -45,6 +45,22 @@ function AuthGuard({ children }) {
   return children;
 }
 
+function DriverLogoutButton() {
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/driver/login");
+  };
+
+  return (
+    <button onClick={handleLogout} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+      <LogOut size={14} /> Logout
+    </button>
+  );
+}
+
 export default function DriverLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -71,6 +87,7 @@ export default function DriverLayout({ children }) {
                     <span className="font-semibold text-sm">DLM Driver</span>
                   </div>
                 </div>
+                <DriverLogoutButton />
               </header>
               <main className="flex-1 p-4 sm:p-6 lg:p-6 overflow-auto">{children}</main>
               <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 px-2 py-1">

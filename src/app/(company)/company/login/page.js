@@ -81,11 +81,6 @@ export default function CompanyLoginPage() {
             <span className="text-gray-500">New here? <Link href="/company/register" className="text-primary hover:underline">Register</Link></span>
           </div>
         </form>
-        <p className="text-xs text-center text-gray-400 mt-4">
-          <Link href="/platform/login" className="hover:underline">Platform Admin</Link>
-          {" · "}
-          <Link href="/driver/login" className="hover:underline">Driver Portal</Link>
-        </p>
       </div>
     </div>
   );
