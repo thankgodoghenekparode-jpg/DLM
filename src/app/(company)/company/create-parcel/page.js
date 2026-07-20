@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   CalendarDays,
   CheckCircle,
-  CreditCard,
   ImageIcon,
   Loader2,
   MapPin,
@@ -19,11 +18,6 @@ import {
   Truck,
   UserRound,
 } from "lucide-react";
-
-const PAYMENT_OPTIONS = [
-  { value: "PAY_NOW", label: "Pay Now" },
-  { value: "PAY_AT_DELIVERY", label: "Pay at Delivery" },
-];
 
 const MAX_LOAD_ITEMS = 500;
 const LOCKED_LOAD_FIELDS = new Set([
@@ -54,8 +48,6 @@ const emptyForm = {
   breadth: "",
   height: "",
   weight: "",
-  paymentOption: "PAY_NOW",
-  priceAmount: "",
 };
 
 function branchLabel(branch) {
@@ -118,7 +110,6 @@ export default function CreateParcelPage() {
       form.destinationBranchId &&
       form.vehicleId &&
       form.driverId &&
-      form.dispatchDate &&
       form.senderName.trim() &&
       form.senderPhone.trim()
   );
@@ -139,8 +130,7 @@ export default function CreateParcelPage() {
       form.length ||
       form.breadth ||
       form.height ||
-      form.weight ||
-      form.priceAmount
+      form.weight
   );
   const ticketCount = createdTickets.length;
   const dispatchLocked = ticketCount > 0;
@@ -156,7 +146,7 @@ export default function CreateParcelPage() {
     id: `load-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     description: form.itemDescription.trim(),
     weight: Number(form.weight),
-    amount: Number(form.priceAmount || 0),
+    amount: 0,
     size: {
       width: Number(form.breadth),
       length: Number(form.length),
@@ -182,7 +172,6 @@ export default function CreateParcelPage() {
       breadth: "",
       height: "",
       weight: "",
-      priceAmount: "",
     }));
     setImageFile(null);
   };
@@ -190,8 +179,8 @@ export default function CreateParcelPage() {
   const buildTicketPayload = () => ({
     originBranchId: form.originBranchId,
     destinationBranchId: form.destinationBranchId,
-    originAddress: originBranch?.address || originBranch?.name || "",
-    destinationAddress: destinationBranch?.address || destinationBranch?.name || "",
+    originAddress: originBranch?.address || originBranch?.name || form.originBranchId,
+    destinationAddress: destinationBranch?.address || destinationBranch?.name || form.destinationBranchId,
   });
 
   const handleAddItem = async () => {
@@ -380,7 +369,7 @@ export default function CreateParcelPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Date of Dispatch *</label>
+                <label className="text-xs text-gray-500 mb-1 block">Date of Dispatch</label>
                 <input type="datetime-local" disabled={dispatchLocked || addingItem || submitting} value={form.dispatchDate} onChange={(e) => update("dispatchDate", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
@@ -448,25 +437,6 @@ export default function CreateParcelPage() {
             </div>
           </section>
 
-          <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-              <CreditCard size={16} /> Payment
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Payment Option *</label>
-                <select value={form.paymentOption} onChange={(e) => update("paymentOption", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-                  {PAYMENT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Amount (NGN)</label>
-                <input type="number" min="0" value={form.priceAmount} onChange={(e) => update("priceAmount", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Optional" />
-              </div>
-            </div>
-          </section>
           <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
@@ -539,13 +509,6 @@ export default function CreateParcelPage() {
                 <div>
                   <p className="text-gray-500">Tickets in this vehicle</p>
                   <p className="font-medium text-gray-900">{ticketCount}/{MAX_LOAD_ITEMS} ticket{ticketCount === 1 ? "" : "s"} generated</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <CreditCard size={15} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-gray-500">Payment</p>
-                  <p className="font-medium text-gray-900">{PAYMENT_OPTIONS.find((option) => option.value === form.paymentOption)?.label}</p>
                 </div>
               </div>
             </div>
