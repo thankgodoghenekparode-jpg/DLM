@@ -8,12 +8,16 @@ import { useAuth } from "@/context/AuthContext";
 import {
   ArrowLeft,
   CalendarDays,
+  CheckCircle,
   CreditCard,
   ImageIcon,
   Loader2,
   MapPin,
   Package,
+  Plus,
+  Ticket,
   Truck,
+  Trash2,
   UserRound,
 } from "lucide-react";
 
@@ -21,6 +25,8 @@ const PAYMENT_OPTIONS = [
   { value: "PAY_NOW", label: "Pay Now" },
   { value: "PAY_AT_DELIVERY", label: "Pay at Delivery" },
 ];
+
+const MAX_LOAD_ITEMS = 50;
 
 const emptyForm = {
   originBranchId: "",
@@ -61,6 +67,8 @@ export default function CreateParcelPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [loadItems, setLoadItems] = useState([]);
+  const [createdTickets, setCreatedTickets] = useState([]);
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -96,16 +104,17 @@ export default function CreateParcelPage() {
     [drivers, form.driverId]
   );
 
-  const itemWeight = Number(form.weight || 0);
-  const canCreate = Boolean(
+  const hasDispatchSetup = Boolean(
     form.originBranchId &&
       form.destinationBranchId &&
       form.vehicleId &&
       form.driverId &&
       form.dispatchDate &&
       form.senderName.trim() &&
-      form.senderPhone.trim() &&
-      form.receiverName.trim() &&
+      form.senderPhone.trim()
+  );
+  const hasItemDraft = Boolean(
+    form.receiverName.trim() &&
       form.receiverPhone.trim() &&
       form.itemDescription.trim() &&
       Number(form.length) > 0 &&
@@ -113,16 +122,66 @@ export default function CreateParcelPage() {
       Number(form.height) > 0 &&
       Number(form.weight) > 0
   );
+  const draftItemCount = loadItems.length + (hasItemDraft ? 1 : 0);
+  const canAddItem = hasDispatchSetup && hasItemDraft && loadItems.length < MAX_LOAD_ITEMS;
+  const canCreate = hasDispatchSetup && draftItemCount > 0;
 
   const update = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const uploadImage = async () => {
-    if (!imageFile) return null;
+  const buildItemDraft = (pictureFile = imageFile) => ({
+    id: `load-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    description: form.itemDescription.trim(),
+    weight: Number(form.weight),
+    amount: Number(form.priceAmount || 0),
+    size: {
+      width: Number(form.breadth),
+      length: Number(form.length),
+      height: Number(form.height),
+    },
+    senderName: form.senderName.trim(),
+    senderEmail: form.senderEmail.trim() || user?.email || "sender@example.com",
+    senderPhone: form.senderPhone.trim(),
+    receiverName: form.receiverName.trim(),
+    receiverEmail: form.receiverEmail.trim() || "receiver@example.com",
+    receiverPhone: form.receiverPhone.trim(),
+    imageFile: pictureFile,
+  });
+
+  const resetItemDraft = () => {
+    setForm((prev) => ({
+      ...prev,
+      receiverName: "",
+      receiverPhone: "",
+      receiverEmail: "",
+      itemDescription: "",
+      length: "",
+      breadth: "",
+      height: "",
+      weight: "",
+      priceAmount: "",
+    }));
+    setImageFile(null);
+  };
+
+  const handleAddItem = () => {
+    if (!canAddItem) return;
+    setLoadItems((prev) => [...prev, buildItemDraft()]);
+    setCreatedTickets([]);
+    resetItemDraft();
+  };
+
+  const handleRemoveItem = (id) => {
+    setLoadItems((prev) => prev.filter((item) => item.id !== id));
+    setCreatedTickets([]);
+  };
+
+  const uploadImage = async (file = imageFile) => {
+    if (!file) return null;
 
     const data = new FormData();
-    data.append("file", imageFile);
+    data.append("file", file);
     data.append("folder", "parcel-items");
 
     const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/upload`, {
@@ -140,13 +199,47 @@ export default function CreateParcelPage() {
     return uploadData.url;
   };
 
+  const createTicketForItem = async (item, ticketPayload) => {
+    const pictureUrl = await uploadImage(item.imageFile);
+    const ticket = await api.post("/tickets", ticketPayload);
+
+    const itemPayload = {
+      ticketId: ticket.id,
+      description: item.description,
+      weight: item.weight,
+      amount: item.amount,
+      size: item.size,
+      senderName: item.senderName,
+      senderEmail: item.senderEmail,
+      senderPhone: item.senderPhone,
+      receiverName: item.receiverName,
+      receiverEmail: item.receiverEmail,
+      receiverPhone: item.receiverPhone,
+    };
+    if (pictureUrl) itemPayload.pictureUrl = pictureUrl;
+
+    await api.post("/items", itemPayload);
+    await api.patch(`/tickets/${ticket.id}/assign`, {
+      vehicleId: form.vehicleId,
+      driverId: form.driverId,
+    });
+
+    return {
+      ...ticket,
+      itemDescription: item.description,
+      receiverName: item.receiverName,
+      amount: item.amount,
+    };
+  };
+
   const handleCreate = async () => {
     if (!canCreate) return;
     setSubmitting(true);
     setError(null);
+    setCreatedTickets([]);
 
     try {
-      const pictureUrl = await uploadImage();
+      const itemsToCreate = hasItemDraft ? [...loadItems, buildItemDraft()] : loadItems;
       const ticketPayload = {
         originBranchId: form.originBranchId,
         destinationBranchId: form.destinationBranchId,
@@ -154,36 +247,16 @@ export default function CreateParcelPage() {
         destinationAddress: destinationBranch?.address || destinationBranch?.name || "",
       };
 
-      const ticket = await api.post("/tickets", ticketPayload);
+      const tickets = [];
+      for (const item of itemsToCreate) {
+        tickets.push(await createTicketForItem(item, ticketPayload));
+      }
 
-      const itemPayload = {
-        ticketId: ticket.id,
-        description: form.itemDescription.trim(),
-        weight: Number(form.weight),
-        amount: Number(form.priceAmount || 0),
-        size: {
-          width: Number(form.breadth),
-          length: Number(form.length),
-          height: Number(form.height),
-        },
-        senderName: form.senderName.trim(),
-        senderEmail: form.senderEmail.trim() || user?.email || "sender@example.com",
-        senderPhone: form.senderPhone.trim(),
-        receiverName: form.receiverName.trim(),
-        receiverEmail: form.receiverEmail.trim() || "receiver@example.com",
-        receiverPhone: form.receiverPhone.trim(),
-      };
-      if (pictureUrl) itemPayload.pictureUrl = pictureUrl;
-
-      await api.post("/items", itemPayload);
-      await api.patch(`/tickets/${ticket.id}/assign`, {
-        vehicleId: form.vehicleId,
-        driverId: form.driverId,
-      });
-
-      router.push(`/company/create-parcel/success/${ticket.id}`);
+      setCreatedTickets(tickets);
+      setLoadItems([]);
+      resetItemDraft();
     } catch (err) {
-      setError(err.message || "Failed to create parcel");
+      setError(err.message || "Failed to create parcel load");
     } finally {
       setSubmitting(false);
     }
@@ -206,16 +279,37 @@ export default function CreateParcelPage() {
         </button>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Create Parcel</h1>
-            <p className="text-sm text-gray-500 mt-1">Dispatch a parcel between company branches.</p>
+            <h1 className="text-xl font-bold text-gray-900">Create Vehicle Load</h1>
+            <p className="text-sm text-gray-500 mt-1">Choose a vehicle, add items, and generate one ticket for each item.</p>
           </div>
           <div className="text-xs text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-2">
-            Ticket number is generated after creation
+            Each item gets its own ticket number
           </div>
         </div>
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">{error}</div>}
+
+      {createdTickets.length > 0 && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg px-4 py-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <CheckCircle size={16} /> {createdTickets.length} ticket{createdTickets.length === 1 ? "" : "s"} generated for this vehicle load
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {createdTickets.map((ticket) => (
+              <button
+                key={ticket.id}
+                type="button"
+                onClick={() => router.push(`/company/tickets/${ticket.id}`)}
+                className="text-left bg-white border border-emerald-200 rounded-lg px-3 py-2 hover:border-emerald-400"
+              >
+                <p className="text-sm font-semibold text-emerald-950">{ticket.ticketNumber || ticket.id}</p>
+                <p className="text-xs text-emerald-700 truncate">{ticket.itemDescription} - {ticket.receiverName}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <div className="space-y-5">
@@ -358,11 +452,56 @@ export default function CreateParcelPage() {
               </div>
             </div>
           </section>
+          <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <Ticket size={16} /> Tickets in This Vehicle
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">Add each item here. Each item becomes its own ticket under the selected vehicle.</p>
+              </div>
+              <Button type="button" variant="secondary" disabled={!canAddItem || submitting} onClick={handleAddItem}>
+                <Plus size={14} className="mr-1" /> Add Item
+              </Button>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gray-50 px-3 py-2 flex items-center justify-between gap-3 text-xs text-gray-600">
+                <span>{selectedVehicle?.plateNumber || selectedVehicle?.plate || "Select a vehicle"}</span>
+                <span>{draftItemCount}/{MAX_LOAD_ITEMS} tickets ready</span>
+              </div>
+              {loadItems.length === 0 ? (
+                <div className="px-3 py-4 text-sm text-gray-500">
+                  No item added yet. Fill the item form, then click Add Item.
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {loadItems.map((item, index) => (
+                    <div key={item.id} className="px-3 py-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">Ticket {index + 1}: {item.description}</p>
+                        <p className="text-xs text-gray-500 mt-1">Receiver: {item.receiverName} - {item.receiverPhone}</p>
+                        <p className="text-xs text-gray-500">{item.weight} kg - {item.size.length} x {item.size.width} x {item.size.height} - NGN {item.amount.toLocaleString()}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"
+                        title="Remove item"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
         </div>
 
         <aside className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5 sticky top-24">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Parcel Summary</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">Vehicle Load Summary</h2>
             <div className="space-y-3 text-sm">
               <div className="flex gap-2">
                 <MapPin size={15} className="text-gray-400 mt-0.5 flex-shrink-0" />
@@ -388,8 +527,8 @@ export default function CreateParcelPage() {
               <div className="flex gap-2">
                 <Package size={15} className="text-gray-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-gray-500">Item</p>
-                  <p className="font-medium text-gray-900">{itemWeight || 0} kg, {form.length || 0} x {form.breadth || 0} x {form.height || 0}</p>
+                  <p className="text-gray-500">Tickets in this vehicle</p>
+                  <p className="font-medium text-gray-900">{draftItemCount}/{MAX_LOAD_ITEMS} ticket{draftItemCount === 1 ? "" : "s"}</p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -403,7 +542,7 @@ export default function CreateParcelPage() {
             <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
               <Button className="w-full" disabled={!canCreate || submitting} onClick={handleCreate}>
                 {submitting ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
-                Submit Parcel
+                {submitting ? "Creating tickets..." : `Submit ${draftItemCount || 1} Parcel${(draftItemCount || 1) === 1 ? "" : "s"}`}
               </Button>
               <Button variant="secondary" className="w-full" disabled={submitting} onClick={() => router.push("/company/dashboard")}>
                 Cancel

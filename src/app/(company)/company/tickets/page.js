@@ -5,7 +5,7 @@ import DataTable from "@/components/shared/DataTable";
 import Button from "@/components/shared/Button";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Link from "next/link";
-import { Plus, LayoutGrid, List, Loader2 } from "lucide-react";
+import { Plus, LayoutGrid, List, Loader2, Truck } from "lucide-react";
 import { api } from "@/lib/api";
 import { TICKET_STATUSES, TICKET_PRIORITIES, getLabel } from "@/lib/constants";
 
@@ -27,13 +27,13 @@ const columns = [
     header: "Route",
     accessor: "_route",
     sortable: true,
-    render: (row) => `${row.originAddress || "—"} → ${row.destinationAddress || "—"}`,
+    render: (row) => `${row.originAddress || "-"} -> ${row.destinationAddress || "-"}`,
   },
   { header: "Status", accessor: "status", sortable: true, render: (row) => <StatusBadge status={row.status} /> },
-  { header: "Driver", accessor: "_driverName", sortable: true, render: (row) => row._driverName || "—" },
-  { header: "Vehicle", accessor: "_vehiclePlate", sortable: true, render: (row) => row._vehiclePlate || "—" },
-  { header: "Priority", accessor: "priority", sortable: true, render: (row) => row.priority || "—" },
-  { header: "Date", accessor: "createdAt", sortable: true, render: (row) => row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "—" },
+  { header: "Driver", accessor: "_driverName", sortable: true, render: (row) => row._driverName || "-" },
+  { header: "Vehicle", accessor: "_vehiclePlate", sortable: true, render: (row) => row._vehiclePlate || "-" },
+  { header: "Priority", accessor: "priority", sortable: true, render: (row) => row.priority || "-" },
+  { header: "Date", accessor: "createdAt", sortable: true, render: (row) => row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-" },
 ];
 
 const KANBAN_STATUSES = ["DRAFT", "PENDING_ASSIGNMENT", "ASSIGNED", "IN_TRANSIT", "DELIVERED"];
@@ -79,7 +79,7 @@ export default function TicketsPage() {
 
   const enriched = tickets.map((t) => ({
     ...t,
-    _route: `${t.originAddress || "—"} → ${t.destinationAddress || "—"}`,
+    _route: `${t.originAddress || "-"} -> ${t.destinationAddress || "-"}`,
     _driverName: t.driverId ? driverMap[t.driverId] || t.driverId : null,
     _vehiclePlate: t.vehicleId ? vehicleMap[t.vehicleId] || t.vehicleId : null,
   }));
@@ -94,6 +94,22 @@ export default function TicketsPage() {
     acc[s] = { label: getLabel(TICKET_STATUSES, s), tickets: filtered.filter((t) => t.status === s), color: KANBAN_COLORS[s] };
     return acc;
   }, {});
+
+  const vehicleLoads = Object.values(
+    filtered.reduce((acc, ticket) => {
+      const key = ticket.vehicleId || "unassigned";
+      if (!acc[key]) {
+        acc[key] = {
+          id: key,
+          label: ticket._vehiclePlate || "Unassigned vehicle",
+          driver: ticket._driverName || "No driver",
+          tickets: [],
+        };
+      }
+      acc[key].tickets.push(ticket);
+      return acc;
+    }, {})
+  );
 
   if (loading) {
     return (
@@ -129,6 +145,39 @@ export default function TicketsPage() {
         <button onClick={() => setView("table")} className={`p-2 rounded-lg ${view === "table" ? "bg-primary text-white" : "text-gray-600 hover:bg-gray-100"}`} title="List view"><List size={18} /></button>
       </div>
 
+      <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Truck size={16} /> Vehicle Loads</h2>
+            <p className="text-xs text-gray-500 mt-1">See tickets grouped under each vehicle.</p>
+          </div>
+          <span className="text-xs text-gray-500">{filtered.length} tickets</span>
+        </div>
+        {vehicleLoads.length === 0 ? (
+          <p className="text-sm text-gray-500">No tickets match the selected filters.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {vehicleLoads.map((load) => (
+              <div key={load.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-gray-50 px-3 py-2">
+                  <p className="text-sm font-semibold text-gray-900">{load.label}</p>
+                  <p className="text-xs text-gray-500">{load.driver} - {load.tickets.length} ticket{load.tickets.length === 1 ? "" : "s"}</p>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {load.tickets.slice(0, 5).map((ticket) => (
+                    <Link key={ticket.id} href={`/company/tickets/${ticket.id}`} className="block px-3 py-2 hover:bg-gray-50">
+                      <p className="text-sm font-medium text-gray-900">{ticket.ticketNumber || ticket.id}</p>
+                      <p className="text-xs text-gray-500 truncate">{ticket.originAddress || "-"} {"->"} {ticket.destinationAddress || "-"}</p>
+                    </Link>
+                  ))}
+                  {load.tickets.length > 5 && <p className="px-3 py-2 text-xs text-gray-500">+{load.tickets.length - 5} more tickets</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div className="flex gap-2 flex-wrap">
         {STATUS_KEYS.map((s) => (
           <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 text-xs rounded-full ${statusFilter === s ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
@@ -152,7 +201,7 @@ export default function TicketsPage() {
                 {col.tickets.map((ticket) => (
                   <Link key={ticket.id} href={`/company/tickets/${ticket.id}`} className="block bg-white rounded-lg p-3 border border-gray-200 hover:shadow-sm">
                     <p className="text-sm font-medium text-gray-900">{ticket.ticketNumber}</p>
-                    <p className="text-xs text-gray-500 mt-1">{ticket.originAddress} → {ticket.destinationAddress}</p>
+                    <p className="text-xs text-gray-500 mt-1">{ticket.originAddress} {"->"} {ticket.destinationAddress}</p>
                     <p className="text-xs text-gray-500">{ticket._driverName || "Unassigned"}</p>
                   </Link>
                 ))}
