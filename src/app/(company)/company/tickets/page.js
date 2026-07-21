@@ -46,6 +46,16 @@ const KANBAN_COLORS = {
   DELIVERED: "bg-green-50",
 };
 
+function getTicketAssignment(ticket) {
+  if (ticket.currentAssignment) return ticket.currentAssignment;
+  if (!Array.isArray(ticket.assignments) || ticket.assignments.length === 0) return null;
+
+  return (
+    ticket.assignments.find((assignment) => ["ACCEPTED", "PENDING_DRIVER_RESPONSE", "PENDING"].includes(assignment.status)) ||
+    ticket.assignments[ticket.assignments.length - 1]
+  );
+}
+
 export default function TicketsPage() {
   const [view, setView] = useState("kanban");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -77,12 +87,20 @@ export default function TicketsPage() {
   const vehicleMap = {};
   vehicles.forEach((v) => { vehicleMap[v.id] = v.plate || v.plateNumber; });
 
-  const enriched = tickets.map((t) => ({
-    ...t,
-    _route: `${t.originAddress || "-"} -> ${t.destinationAddress || "-"}`,
-    _driverName: t.driverId ? driverMap[t.driverId] || t.driverId : null,
-    _vehiclePlate: t.vehicleId ? vehicleMap[t.vehicleId] || t.vehicleId : null,
-  }));
+  const enriched = tickets.map((t) => {
+    const assignment = getTicketAssignment(t);
+    const driverId = t.driverId || assignment?.driverId;
+    const vehicleId = t.vehicleId || assignment?.vehicleId;
+
+    return {
+      ...t,
+      _route: `${t.originAddress || "-"} -> ${t.destinationAddress || "-"}`,
+      _driverId: driverId,
+      _vehicleId: vehicleId,
+      _driverName: driverId ? driverMap[driverId] || driverId : null,
+      _vehiclePlate: vehicleId ? vehicleMap[vehicleId] || vehicleId : null,
+    };
+  });
 
   const filtered = enriched.filter((t) => {
     if (statusFilter !== "ALL" && t.status !== statusFilter) return false;
@@ -97,7 +115,7 @@ export default function TicketsPage() {
 
   const vehicleLoads = Object.values(
     filtered.reduce((acc, ticket) => {
-      const key = ticket.vehicleId || "unassigned";
+      const key = ticket._vehicleId || "unassigned";
       if (!acc[key]) {
         acc[key] = {
           id: key,

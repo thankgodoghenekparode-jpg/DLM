@@ -48,6 +48,25 @@ function formatEta(minutes) {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+function getEtaMinutes(eta) {
+  if (!eta) return null;
+  if (eta.etaMinutes != null) return eta.etaMinutes;
+  if (!eta.estimatedArrival) return null;
+
+  const minutes = (new Date(eta.estimatedArrival).getTime() - Date.now()) / 60000;
+  return Number.isFinite(minutes) ? Math.max(0, minutes) : null;
+}
+
+function getTicketAssignment(ticket) {
+  if (ticket.currentAssignment) return ticket.currentAssignment;
+  if (!Array.isArray(ticket.assignments) || ticket.assignments.length === 0) return null;
+
+  return (
+    ticket.assignments.find((assignment) => ["ACCEPTED", "PENDING_DRIVER_RESPONSE", "PENDING"].includes(assignment.status)) ||
+    ticket.assignments[ticket.assignments.length - 1]
+  );
+}
+
 function KPICard({ title, value, icon: Icon, subtitle }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -79,10 +98,36 @@ export default function TrackerPage() {
         setLoading(true);
         setError(null);
 
-        const allTickets = await api.get("/tickets");
+        const [allTickets, allDrivers, allVehicles] = await Promise.all([
+          api.get("/tickets"),
+          api.get("/drivers").catch(() => []),
+          api.get("/vehicles").catch(() => []),
+        ]);
         if (cancelled) return;
 
-        const inTransit = allTickets.filter((t) => t.status === "IN_TRANSIT");
+        const driverMap = {};
+        (Array.isArray(allDrivers) ? allDrivers : []).forEach((driver) => {
+          driverMap[driver.id] = driver.fullName || driver.name || driver.id;
+        });
+
+        const vehicleMap = {};
+        (Array.isArray(allVehicles) ? allVehicles : []).forEach((vehicle) => {
+          vehicleMap[vehicle.id] = vehicle.plateNumber || vehicle.plate || vehicle.id;
+        });
+
+        const inTransit = (Array.isArray(allTickets) ? allTickets : [])
+          .filter((ticket) => ticket.status === "IN_TRANSIT")
+          .map((ticket) => {
+            const assignment = getTicketAssignment(ticket);
+            const driverId = ticket.driverId || assignment?.driverId;
+            const vehicleId = ticket.vehicleId || assignment?.vehicleId;
+
+            return {
+              ...ticket,
+              _driverName: driverId ? driverMap[driverId] || driverId : "—",
+              _vehiclePlate: vehicleId ? vehicleMap[vehicleId] || vehicleId : "—",
+            };
+          });
         setTickets(inTransit);
 
         const etaResults = await Promise.allSettled(
@@ -109,7 +154,7 @@ export default function TrackerPage() {
   }, []);
 
   const avgEtaMinutes = tickets.length
-    ? tickets.reduce((sum, t) => sum + (etas[t.id]?.etaMinutes ?? 0), 0) / tickets.length
+    ? tickets.reduce((sum, t) => sum + (getEtaMinutes(etas[t.id]) ?? 0), 0) / tickets.length
     : 0;
 
   const columns = [
@@ -133,8 +178,8 @@ export default function TrackerPage() {
         </span>
       ),
     },
-    { header: "Vehicle", accessor: "vehicleId", sortable: true },
-    { header: "Driver", accessor: "driverId", sortable: true },
+    { header: "Vehicle", accessor: "_vehiclePlate", sortable: true },
+    { header: "Driver", accessor: "_driverName", sortable: true },
     {
       header: "Progress",
       accessor: "_progress",
@@ -151,7 +196,7 @@ export default function TrackerPage() {
       header: "ETA",
       accessor: "etaMinutes",
       sortable: false,
-      render: (row) => formatEta(etas[row.id]?.etaMinutes),
+      render: (row) => formatEta(getEtaMinutes(etas[row.id])),
     },
   ];
 

@@ -20,12 +20,24 @@ function formatSize(size) {
   return values.every((value) => value === "-") ? "Not set" : values.join(" x ");
 }
 
+function getTicketAssignment(ticket) {
+  if (ticket?.currentAssignment) return ticket.currentAssignment;
+  if (!Array.isArray(ticket?.assignments) || ticket.assignments.length === 0) return null;
+
+  return (
+    ticket.assignments.find((assignment) => ["ACCEPTED", "PENDING_DRIVER_RESPONSE", "PENDING"].includes(assignment.status)) ||
+    ticket.assignments[ticket.assignments.length - 1]
+  );
+}
+
 export default function TicketDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
 
   const [ticket, setTicket] = useState(null);
   const [items, setItems] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -33,7 +45,7 @@ export default function TicketDetailPage({ params }) {
 
   const [showAttachment, setShowAttachment] = useState(false);
   const [attaching, setAttaching] = useState(false);
-  const [attachmentType, setAttachmentType] = useState("DOCUMENT");
+  const [attachmentType, setAttachmentType] = useState("WAYBILL");
 
   // Cancel modal
   const [showCancel, setShowCancel] = useState(false);
@@ -52,9 +64,11 @@ export default function TicketDetailPage({ params }) {
 
   useEffect(() => {
     const load = async () => {
-      const [ticketData, itemsData] = await Promise.all([
+      const [ticketData, itemsData, driverData, vehicleData] = await Promise.all([
         api.get(`/tickets/${id}`).catch(() => null),
         api.get(`/items/ticket/${id}`).catch(() => []),
+        api.get("/drivers").catch(() => []),
+        api.get("/vehicles").catch(() => []),
       ]);
       if (!ticketData) {
         setError("Failed to load ticket");
@@ -62,18 +76,24 @@ export default function TicketDetailPage({ params }) {
         setTicket(ticketData);
       }
       setItems(Array.isArray(itemsData) ? itemsData : []);
+      setDrivers(Array.isArray(driverData) ? driverData : []);
+      setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
       setLoading(false);
     };
     load();
   }, [id]);
 
   const refreshTicket = async () => {
-    const [ticketData, itemsData] = await Promise.all([
+    const [ticketData, itemsData, driverData, vehicleData] = await Promise.all([
       api.get(`/tickets/${id}`).catch(() => null),
       api.get(`/items/ticket/${id}`).catch(() => []),
+      api.get("/drivers").catch(() => []),
+      api.get("/vehicles").catch(() => []),
     ]);
     if (ticketData) setTicket(ticketData);
     setItems(Array.isArray(itemsData) ? itemsData : []);
+    setDrivers(Array.isArray(driverData) ? driverData : []);
+    setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
   };
 
   const handleAttachment = async (file) => {
@@ -98,7 +118,7 @@ export default function TicketDetailPage({ params }) {
         file: { fileName: file.name, fileUrl: uploadData.url },
       });
       setShowAttachment(false);
-      setAttachmentType("DOCUMENT");
+      setAttachmentType("WAYBILL");
       alert("Attachment added successfully");
     } catch (err) {
       alert(err.message || "Failed to add attachment");
@@ -193,6 +213,13 @@ export default function TicketDetailPage({ params }) {
   }
 
   const history = ticket.statusHistory || [];
+  const assignment = getTicketAssignment(ticket);
+  const assignedDriverId = ticket.driverId || assignment?.driverId;
+  const assignedVehicleId = ticket.vehicleId || assignment?.vehicleId;
+  const assignedDriver = drivers.find((driver) => driver.id === assignedDriverId);
+  const assignedVehicle = vehicles.find((vehicle) => vehicle.id === assignedVehicleId);
+  const driverLabel = assignedDriver?.fullName || assignedDriver?.name || assignedDriverId || "—";
+  const vehicleLabel = assignedVehicle?.plateNumber || assignedVehicle?.plate || assignedVehicleId || "—";
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -246,8 +273,9 @@ export default function TicketDetailPage({ params }) {
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">Vehicle & Driver</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-gray-500">Vehicle ID</span><p className="font-medium">{ticket.vehicleId || "—"}</p></div>
-              <div><span className="text-gray-500">Driver ID</span><p className="font-medium">{ticket.driverId || "—"}</p></div>
+              <div><span className="text-gray-500">Vehicle</span><p className="font-medium">{vehicleLabel}</p></div>
+              <div><span className="text-gray-500">Driver</span><p className="font-medium">{driverLabel}</p></div>
+              {assignment?.status && <div><span className="text-gray-500">Assignment</span><p className="font-medium">{assignment.status}</p></div>}
             </div>
           </div>
 
@@ -404,9 +432,9 @@ export default function TicketDetailPage({ params }) {
             <div className="space-y-3">
               <div><label className="text-xs text-gray-500 mb-1 block">Type</label>
                 <select value={attachmentType} onChange={(e) => setAttachmentType(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                  <option value="DOCUMENT">Document</option>
-                  <option value="PHOTO">Photo</option>
-                  <option value="RECEIPT">Receipt</option>
+                  <option value="WAYBILL">Waybill</option>
+                  <option value="CUSTOMER_INVOICE">Customer Invoice</option>
+                  <option value="POD_PHOTO">POD Photo</option>
                   <option value="OTHER">Other</option>
                 </select>
               </div>

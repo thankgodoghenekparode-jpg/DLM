@@ -277,13 +277,16 @@ export default function CreateParcelPage() {
     if (pictureUrl) itemPayload.pictureUrl = pictureUrl;
 
     await api.post("/items", itemPayload);
-    await api.patch(`/tickets/${ticket.id}/assign`, {
+    const assignment = await api.patch(`/tickets/${ticket.id}/assign`, {
       vehicleId: form.vehicleId,
       driverId: form.driverId,
     });
 
     return {
       ...ticket,
+      vehicleId: ticket.vehicleId || form.vehicleId,
+      driverId: ticket.driverId || form.driverId,
+      currentAssignment: assignment?.currentAssignment || assignment,
       itemDescription: item.description,
       receiverName: item.receiverName,
       amount: item.amount,

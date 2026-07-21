@@ -44,7 +44,7 @@ export default function DriverTripDetailPage({ params }) {
     fetchTicket();
   }, [fetchTicket]);
 
-  const pendingAssignment = ticket?.assignments?.find((a) => a.status === "PENDING");
+  const pendingAssignment = ticket?.assignments?.find((a) => a.status === "PENDING_DRIVER_RESPONSE");
 
   const handleRespond = async () => {
     if (!pendingAssignment) return;
@@ -93,6 +93,7 @@ export default function DriverTripDetailPage({ params }) {
       setSubmittingPOD(true);
       const body = {
         receivedByName: receivedByName.trim(),
+        photoUrls: [],
         deliveredAt: new Date().toISOString(),
         notes: podNotes.trim() || undefined,
       };
