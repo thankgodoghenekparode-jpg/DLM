@@ -26,9 +26,6 @@ const LOCKED_LOAD_FIELDS = new Set([
   "vehicleId",
   "driverId",
   "dispatchDate",
-  "senderName",
-  "senderPhone",
-  "senderEmail",
 ]);
 
 const emptyForm = {
@@ -121,12 +118,14 @@ export default function CreateParcelPage() {
     [drivers, form.driverId]
   );
 
-  const hasDispatchSetup = Boolean(
+  const hasLoadSetup = Boolean(
     form.originBranchId &&
       form.destinationBranchId &&
       form.vehicleId &&
-      form.driverId &&
-      form.senderName.trim() &&
+      form.driverId
+  );
+  const hasSenderDetails = Boolean(
+    form.senderName.trim() &&
       form.senderPhone.trim()
   );
   const hasItemDraft = Boolean(
@@ -137,6 +136,9 @@ export default function CreateParcelPage() {
       Number(form.priceAmount) > 0
   );
   const hasItemInput = Boolean(
+    form.senderName.trim() ||
+      form.senderPhone.trim() ||
+      form.senderEmail.trim() ||
     form.receiverName.trim() ||
       form.receiverPhone.trim() ||
       form.receiverEmail.trim() ||
@@ -149,8 +151,8 @@ export default function CreateParcelPage() {
   );
   const ticketCount = createdTickets.length;
   const dispatchLocked = ticketCount > 0;
-  const canAddItem = hasDispatchSetup && hasItemDraft && ticketCount < MAX_LOAD_ITEMS;
-  const canCreate = hasDispatchSetup && ticketCount > 0 && !hasItemInput;
+  const canAddItem = hasLoadSetup && hasSenderDetails && hasItemDraft && ticketCount < MAX_LOAD_ITEMS;
+  const canCreate = hasLoadSetup && ticketCount > 0 && !hasItemInput;
 
   const update = (field, value) => {
     if (dispatchLocked && LOCKED_LOAD_FIELDS.has(field)) return;
@@ -175,6 +177,9 @@ export default function CreateParcelPage() {
   const resetItemDraft = () => {
     setForm((prev) => ({
       ...prev,
+      senderName: "",
+      senderPhone: "",
+      senderEmail: "",
       receiverName: "",
       receiverPhone: "",
       receiverEmail: "",
@@ -407,9 +412,9 @@ export default function CreateParcelPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-3">
                 <p className="text-xs font-semibold text-gray-500 uppercase">Sender Details</p>
-                <input disabled={dispatchLocked || addingItem || submitting} value={form.senderName} onChange={(e) => update("senderName", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Sender name *" />
-                <input disabled={dispatchLocked || addingItem || submitting} value={form.senderPhone} onChange={(e) => update("senderPhone", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Sender phone *" />
-                <input type="email" disabled={dispatchLocked || addingItem || submitting} value={form.senderEmail} onChange={(e) => update("senderEmail", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Sender email" />
+                <input disabled={addingItem || submitting} value={form.senderName} onChange={(e) => update("senderName", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Sender name *" />
+                <input disabled={addingItem || submitting} value={form.senderPhone} onChange={(e) => update("senderPhone", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Sender phone *" />
+                <input type="email" disabled={addingItem || submitting} value={form.senderEmail} onChange={(e) => update("senderEmail", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Sender email" />
               </div>
               <div className="space-y-3">
                 <p className="text-xs font-semibold text-gray-500 uppercase">Receiver Details</p>
@@ -544,7 +549,7 @@ export default function CreateParcelPage() {
             <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
               <Button className="w-full" disabled={!canCreate || submitting || addingItem} onClick={handleCreate}>
                 {submitting ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
-                {hasItemInput ? "Generate current item first" : "Finish Parcel"}
+                {hasItemInput ? "Generate or clear current waybill first" : "Finish Parcel"}
               </Button>
               <Button variant="secondary" className="w-full" disabled={submitting || addingItem} onClick={() => router.push("/company/dashboard")}>
                 Cancel
