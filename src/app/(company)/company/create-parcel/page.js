@@ -48,10 +48,26 @@ const emptyForm = {
   breadth: "",
   height: "",
   weight: "",
+  priceAmount: "",
 };
 
 function branchLabel(branch) {
   return [branch.name, branch.address].filter(Boolean).join(" - ") || branch.id;
+}
+
+function optionalNumber(value) {
+  if (value === "" || value === null || value === undefined) return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : undefined;
+}
+
+function buildOptionalSize({ breadth, length, height }) {
+  const size = {
+    width: optionalNumber(breadth),
+    length: optionalNumber(length),
+    height: optionalNumber(height),
+  };
+  return Object.values(size).some((value) => value !== undefined) ? size : undefined;
 }
 
 
@@ -117,10 +133,8 @@ export default function CreateParcelPage() {
     form.receiverName.trim() &&
       form.receiverPhone.trim() &&
       form.itemDescription.trim() &&
-      Number(form.length) > 0 &&
-      Number(form.breadth) > 0 &&
-      Number(form.height) > 0 &&
-      Number(form.weight) > 0
+      Number(form.weight) > 0 &&
+      Number(form.priceAmount) > 0
   );
   const hasItemInput = Boolean(
     form.receiverName.trim() ||
@@ -130,7 +144,8 @@ export default function CreateParcelPage() {
       form.length ||
       form.breadth ||
       form.height ||
-      form.weight
+      form.weight ||
+      form.priceAmount
   );
   const ticketCount = createdTickets.length;
   const dispatchLocked = ticketCount > 0;
@@ -146,12 +161,8 @@ export default function CreateParcelPage() {
     id: `load-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     description: form.itemDescription.trim(),
     weight: Number(form.weight),
-    amount: 0,
-    size: {
-      width: Number(form.breadth),
-      length: Number(form.length),
-      height: Number(form.height),
-    },
+    amount: Number(form.priceAmount),
+    size: buildOptionalSize(form),
     senderName: form.senderName.trim(),
     senderEmail: form.senderEmail.trim() || user?.email || "sender@example.com",
     senderPhone: form.senderPhone.trim(),
@@ -172,16 +183,30 @@ export default function CreateParcelPage() {
       breadth: "",
       height: "",
       weight: "",
+      priceAmount: "",
     }));
     setImageFile(null);
   };
 
-  const buildTicketPayload = () => ({
-    originBranchId: form.originBranchId,
-    destinationBranchId: form.destinationBranchId,
-    originAddress: originBranch?.address || originBranch?.name || form.originBranchId,
-    destinationAddress: destinationBranch?.address || destinationBranch?.name || form.destinationBranchId,
-  });
+  const buildTicketPayload = () => {
+    const payload = {
+      originBranchId: form.originBranchId,
+      destinationBranchId: form.destinationBranchId,
+      originAddress: originBranch?.address || originBranch?.name || form.originBranchId,
+      destinationAddress: destinationBranch?.address || destinationBranch?.name || form.destinationBranchId,
+      cargoDescription: form.itemDescription.trim(),
+      cargoWeightKg: optionalNumber(form.weight),
+      consignee: {
+        name: form.senderName.trim(),
+        phone: form.senderPhone.trim(),
+        address: originBranch?.address || originBranch?.name || form.originBranchId,
+        email: form.senderEmail.trim() || undefined,
+      },
+      priority: "NORMAL",
+    };
+    if (form.dispatchDate) payload.requestedPickupAt = new Date(form.dispatchDate).toISOString();
+    return payload;
+  };
 
   const handleAddItem = async () => {
     if (!canAddItem) return;
@@ -236,7 +261,6 @@ export default function CreateParcelPage() {
       description: item.description,
       weight: item.weight,
       amount: item.amount,
-      size: item.size,
       senderName: item.senderName,
       senderEmail: item.senderEmail,
       senderPhone: item.senderPhone,
@@ -244,6 +268,7 @@ export default function CreateParcelPage() {
       receiverEmail: item.receiverEmail,
       receiverPhone: item.receiverPhone,
     };
+    if (item.size) itemPayload.size = item.size;
     if (pictureUrl) itemPayload.pictureUrl = pictureUrl;
 
     await api.post("/items", itemPayload);
@@ -308,7 +333,7 @@ export default function CreateParcelPage() {
                 className="text-left bg-white border border-emerald-200 rounded-lg px-3 py-2 hover:border-emerald-400"
               >
                 <p className="text-sm font-semibold text-emerald-950">{ticket.ticketNumber || ticket.id}</p>
-                <p className="text-xs text-emerald-700 truncate">{ticket.itemDescription} - {ticket.receiverName}</p>
+                <p className="text-xs text-emerald-700 truncate">{ticket.itemDescription} - {ticket.receiverName} - NGN {Number(ticket.amount || 0).toLocaleString()}</p>
               </button>
             ))}
           </div>
@@ -406,15 +431,15 @@ export default function CreateParcelPage() {
                   <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Size</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Length *</label>
+                      <label className="text-xs text-gray-500 mb-1 block">Length</label>
                       <input type="number" min="0" step="0.01" value={form.length} onChange={(e) => update("length", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0.00" />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Breadth *</label>
+                      <label className="text-xs text-gray-500 mb-1 block">Breadth</label>
                       <input type="number" min="0" step="0.01" value={form.breadth} onChange={(e) => update("breadth", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0.00" />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Height *</label>
+                      <label className="text-xs text-gray-500 mb-1 block">Height</label>
                       <input type="number" min="0" step="0.01" value={form.height} onChange={(e) => update("height", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0.00" />
                     </div>
                   </div>
@@ -423,6 +448,10 @@ export default function CreateParcelPage() {
                   <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Weight</p>
                   <input type="number" min="0" step="0.01" value={form.weight} onChange={(e) => update("weight", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Weight in kg *" />
                 </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Item Amount (NGN) *</label>
+                <input type="number" min="0" step="0.01" value={form.priceAmount} onChange={(e) => update("priceAmount", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Enter item amount" />
               </div>
               <label className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary/60">
                 <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
@@ -469,7 +498,7 @@ export default function CreateParcelPage() {
                       className="w-full px-3 py-3 text-left hover:bg-gray-50"
                     >
                       <p className="text-sm font-semibold text-gray-900">Ticket {index + 1}: {ticket.ticketNumber || ticket.id}</p>
-                      <p className="text-xs text-gray-500 mt-1">{ticket.itemDescription} - {ticket.receiverName}</p>
+                      <p className="text-xs text-gray-500 mt-1">{ticket.itemDescription} - {ticket.receiverName} - NGN {Number(ticket.amount || 0).toLocaleString()}</p>
                       <p className="text-xs text-gray-500">Assigned to {selectedVehicle?.plateNumber || selectedVehicle?.plate || "vehicle"} / {selectedDriver?.fullName || selectedDriver?.name || "driver"}</p>
                     </button>
                   ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Button from "@/components/shared/Button";
@@ -32,7 +32,7 @@ export default function CompanyDetailPage({ params }) {
   const [periodEnd, setPeriodEnd] = useState("");
   const [subSubmitting, setSubSubmitting] = useState(false);
 
-  const fetchTenant = () => {
+  const fetchTenant = useCallback(() => {
     api.get("/platform/tenants")
       .then((data) => {
         const found = (Array.isArray(data) ? data : []).find((t) => t.id === id);
@@ -41,9 +41,9 @@ export default function CompanyDetailPage({ params }) {
         setLoading(false);
       })
       .catch((err) => { setError(err.message || "Failed to load company"); setLoading(false); });
-  };
+  }, [id]);
 
-  useEffect(() => { fetchTenant(); }, [id]);
+  useEffect(() => { fetchTenant(); }, [fetchTenant]);
 
   const handleStatusChange = async (status, reason) => {
     setActionLoading(status);

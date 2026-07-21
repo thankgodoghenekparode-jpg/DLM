@@ -10,6 +10,16 @@ import { api } from "@/lib/api";
 import { TICKET_STATUSES, TICKET_PRIORITIES, getLabel } from "@/lib/constants";
 import { Package, Weight, ImageIcon, MapPin, Loader2, X, Paperclip } from "lucide-react";
 
+function formatMoney(amount) {
+  return `NGN ${Number(amount || 0).toLocaleString()}`;
+}
+
+function formatSize(size) {
+  if (!size) return "Not set";
+  const values = [size.width, size.length, size.height].map((value) => (value ? Number(value).toLocaleString() : "-"));
+  return values.every((value) => value === "-") ? "Not set" : values.join(" x ");
+}
+
 export default function TicketDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
@@ -311,7 +321,8 @@ export default function TicketDetailPage({ params }) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">{item.description}</p>
-                        <p className="text-xs text-gray-500">Size: {item.size?.width || 0}×{item.size?.length || 0}×{item.size?.height || 0}</p>
+                        <p className="text-xs text-gray-500">Amount: {formatMoney(item.amount)}</p>
+                        <p className="text-xs text-gray-500">Size: {formatSize(item.size)}</p>
                         <p className="text-xs text-gray-400 mt-1">Click to view details</p>
                       </div>
                     </div>
@@ -360,7 +371,8 @@ export default function TicketDetailPage({ params }) {
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Weight</span><p className="font-medium">{selectedItem.weight} kg</p></div>
-              <div><span className="text-gray-500">Size</span><p className="font-medium">{selectedItem.size?.width || 0}×{selectedItem.size?.length || 0}×{selectedItem.size?.height || 0}</p></div>
+              <div><span className="text-gray-500">Amount</span><p className="font-medium">{formatMoney(selectedItem.amount)}</p></div>
+              <div><span className="text-gray-500">Size</span><p className="font-medium">{formatSize(selectedItem.size)}</p></div>
               {selectedItem.status && <div className="col-span-2"><span className="text-gray-500">Status</span><p className="font-medium">{selectedItem.status}</p></div>}
             </div>
             {selectedItem.senderName && (

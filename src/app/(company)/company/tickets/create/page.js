@@ -13,6 +13,7 @@ const emptyItem = () => ({
   _key: `item-${++itemCounter}`,
   description: "",
   weight: "",
+  amount: "",
   sizeW: "",
   sizeL: "",
   sizeH: "",
@@ -22,6 +23,21 @@ const STEPS = ["Ticket Details", "Add Items", "Assign Driver"];
 
 function branchLabel(branch) {
   return [branch.name, branch.address].filter(Boolean).join(" - ") || branch.id;
+}
+
+function optionalNumber(value) {
+  if (value === "" || value === null || value === undefined) return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : undefined;
+}
+
+function buildOptionalSize(item) {
+  const size = {
+    width: optionalNumber(item.sizeW),
+    length: optionalNumber(item.sizeL),
+    height: optionalNumber(item.sizeH),
+  };
+  return Object.values(size).some((value) => value !== undefined) ? size : undefined;
 }
 
 export default function CreateTicketPage() {
@@ -80,8 +96,16 @@ export default function CreateTicketPage() {
   };
 
   const addItem = () => {
-    if (!currentItem.description || !currentItem.weight) return;
-    setItems((prev) => [...prev, { ...currentItem, weight: parseFloat(currentItem.weight) }]);
+    if (!currentItem.description.trim() || !optionalNumber(currentItem.weight) || !optionalNumber(currentItem.amount)) return;
+    setItems((prev) => [
+      ...prev,
+      {
+        ...currentItem,
+        description: currentItem.description.trim(),
+        weight: optionalNumber(currentItem.weight),
+        amount: optionalNumber(currentItem.amount),
+      },
+    ]);
     setCurrentItem(emptyItem());
   };
 
@@ -89,7 +113,7 @@ export default function CreateTicketPage() {
     setItems((prev) => (prev.filter((i) => i._key !== key)));
   };
 
-  const canProceedStep1 = originBranchId && destinationBranchId && originAddress.trim() && destinationAddress.trim() && cargoDescription.trim() && requestedPickupAt;
+  const canProceedStep1 = originBranchId && destinationBranchId && originAddress.trim() && destinationAddress.trim() && cargoDescription.trim();
 
   const handleCreateTicket = async () => {
     setSubmitting(true);
@@ -100,7 +124,22 @@ export default function CreateTicketPage() {
         originAddress: originAddress.trim(),
         destinationBranchId,
         destinationAddress: destinationAddress.trim(),
+        cargoDescription: cargoDescription.trim(),
+        consignee: {
+          name: user?.fullName || "Consignee",
+          phone: user?.phone || "0000000000",
+          address: originAddress.trim(),
+          email: user?.email || undefined,
+        },
+        priority: "NORMAL",
       };
+      if (requestedPickupAt) body.requestedPickupAt = new Date(requestedPickupAt).toISOString();
+      if (customerPriceAmount) {
+        body.customerPrice = {
+          amount: optionalNumber(customerPriceAmount) || 0,
+          currency: "NGN",
+        };
+      }
       const ticket = await api.post("/tickets", body);
       setCreatedTicketId(ticket.id);
       setStep(2);
@@ -116,23 +155,21 @@ export default function CreateTicketPage() {
     setError(null);
     try {
       for (const item of items) {
-        await api.post("/items", {
+        const itemPayload = {
           ticketId: createdTicketId,
           description: item.description,
           weight: item.weight,
-          amount: parseFloat(customerPriceAmount) || 0,
-          size: {
-            width: parseFloat(item.sizeW) || 1,
-            length: parseFloat(item.sizeL) || 1,
-            height: parseFloat(item.sizeH) || 1,
-          },
+          amount: item.amount,
           senderName: user?.fullName || "Consignee",
           senderEmail: user?.email || "consignee@placeholder.com",
           senderPhone: user?.phone || "0000000000",
           receiverName: "pending",
           receiverEmail: "pending@placeholder.com",
           receiverPhone: "0000000000",
-        });
+        };
+        const size = buildOptionalSize(item);
+        if (size) itemPayload.size = size;
+        await api.post("/items", itemPayload);
       }
       setStep(3);
     } catch (err) {
@@ -228,11 +265,11 @@ export default function CreateTicketPage() {
               <input value={cargoDescription} onChange={(e) => setCargoDescription(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="e.g. Electronics equipment" />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Requested Pickup At *</label>
+              <label className="text-xs text-gray-500">Requested Pickup At</label>
               <input type="datetime-local" value={requestedPickupAt} onChange={(e) => setRequestedPickupAt(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Customer Price (NGN)</label>
+              <label className="text-xs text-gray-500">Ticket Price (NGN)</label>
               <input type="number" min="0" value={customerPriceAmount} onChange={(e) => setCustomerPriceAmount(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="Optional" />
             </div>
             <div>
@@ -262,7 +299,9 @@ export default function CreateTicketPage() {
                     <span className="text-xs text-gray-400 font-mono mt-0.5">#{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{item.description}</p>
-                      <p className="text-xs text-gray-500">{item.weight}t · {item.sizeW || 0}×{item.sizeL || 0}×{item.sizeH || 0}</p>
+                      <p className="text-xs text-gray-500">
+                        {item.weight} kg - NGN {Number(item.amount || 0).toLocaleString()} - Size {item.sizeW || "-"} x {item.sizeL || "-"} x {item.sizeH || "-"}
+                      </p>
                       <p className="text-xs text-gray-400">{user?.fullName || "You"} (consignee)</p>
                     </div>
                     <button onClick={() => removeItem(item._key)} className="text-gray-400 hover:text-red-500 mt-0.5"><Trash2 size={14} /></button>
@@ -276,10 +315,14 @@ export default function CreateTicketPage() {
                 <label className="text-xs text-gray-500">Description *</label>
                 <input value={currentItem.description} onChange={(e) => updateItem("description", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="e.g. Electronics equipment" />
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <div>
                   <label className="text-xs text-gray-500 flex items-center gap-1"><Weight size={10} /> Weight (kg) *</label>
                   <input type="number" step="0.1" min="0" value={currentItem.weight} onChange={(e) => updateItem("weight", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="0.0" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 flex items-center gap-1">Amount (NGN) *</label>
+                  <input type="number" step="0.01" min="0" value={currentItem.amount} onChange={(e) => updateItem("amount", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="0.00" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 flex items-center gap-1"><Ruler size={10} /> Width</label>
@@ -333,7 +376,8 @@ export default function CreateTicketPage() {
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Route</span><span className="font-medium">{originAddress || "—"} → {destinationAddress || "—"}</span></div>
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Cargo</span><span className="font-medium">{cargoDescription || "—"}</span></div>
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Pickup</span><span className="font-medium">{requestedPickupAt ? new Date(requestedPickupAt).toLocaleString() : "—"}</span></div>
-              {customerPriceAmount && <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Price</span><span className="font-medium">₦{parseFloat(customerPriceAmount).toLocaleString()}</span></div>}
+              {customerPriceAmount && <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Ticket Price</span><span className="font-medium">NGN {parseFloat(customerPriceAmount).toLocaleString()}</span></div>}
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Item Total</span><span className="font-medium">NGN {items.reduce((sum, item) => sum + Number(item.amount || 0), 0).toLocaleString()}</span></div>
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Items</span><span className="font-medium">{items.length}</span></div>
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Driver</span><span className="font-medium">{drivers.find((d) => d.id === selectedDriverId)?.fullName || "Not assigned"}</span></div>
               <div className="grid grid-cols-2 gap-2"><span className="text-gray-500">Vehicle</span><span className="font-medium">{vehicles.find((v) => v.id === selectedVehicleId)?.plateNumber || vehicles.find((v) => v.id === selectedVehicleId)?.plate || "Not selected"}</span></div>
