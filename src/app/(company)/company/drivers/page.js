@@ -196,7 +196,7 @@ export default function DriversPage() {
               <button onClick={closeWizard} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-gray-500 mb-6">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mb-6 overflow-x-auto pb-2">
               {STEPS.map((label, i) => (
                 <span key={label} className="flex items-center gap-2">
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${i + 1 <= step ? "bg-primary text-white" : "bg-gray-200 text-gray-500"}`}>{i + 1}</span>

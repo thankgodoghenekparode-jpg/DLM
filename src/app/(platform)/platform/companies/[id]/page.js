@@ -169,7 +169,7 @@ export default function CompanyDetailPage({ params }) {
               <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Building2 size={16} /> Company Info</h3>
               <button onClick={openEdit} className="text-gray-400 hover:text-primary"><Edit3 size={14} /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Email</span><p className="font-medium">{tenant.email}</p></div>
               <div><span className="text-gray-500">Phone</span><p className="font-medium">{tenant.phone || "—"}</p></div>
               <div><span className="text-gray-500">Status</span><p className="font-medium">{getLabel(TENANT_STATUSES, tenant.status)}</p></div>

@@ -143,7 +143,7 @@ export default function DriverDetailPage({ params }) {
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Personal Details</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Email</span><p className="font-medium">{driver.email || "—"}</p></div>
               <div><span className="text-gray-500">Phone</span><p className="font-medium">{driver.phone}</p></div>
               <div><span className="text-gray-500">Date of Birth</span><p className="font-medium">{driver.dateOfBirth || "—"}</p></div>
@@ -155,7 +155,7 @@ export default function DriverDetailPage({ params }) {
 
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">License</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">License Number</span><p className="font-medium">{driver.licenseNumber}</p></div>
               <div><span className="text-gray-500">License Expires</span><p className="font-medium">{driver.licenseExpiresAt || "—"}</p></div>
             </div>
@@ -164,7 +164,7 @@ export default function DriverDetailPage({ params }) {
           {driver.emergencyContact && (
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Emergency Contact</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div><span className="text-gray-500">Name</span><p className="font-medium">{driver.emergencyContact.name || "—"}</p></div>
                 <div><span className="text-gray-500">Phone</span><p className="font-medium">{driver.emergencyContact.phone || "—"}</p></div>
                 <div><span className="text-gray-500">Address</span><p className="font-medium">{driver.emergencyContact.address || "—"}</p></div>
@@ -175,7 +175,7 @@ export default function DriverDetailPage({ params }) {
 
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Assignment</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Status</span><p className="font-medium">{getLabel(DRIVER_STATUSES, driver.status)}</p></div>
               <div><span className="text-gray-500">Current Vehicle</span><p className="font-medium flex items-center gap-1"><Truck size={14} /> {driver.currentVehicleId || "—"}</p></div>
             </div>
@@ -192,20 +192,20 @@ export default function DriverDetailPage({ params }) {
             </div>
             <div className="space-y-4">
               <div><h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Personal Details</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="text-xs text-gray-500 mb-1 block">Phone</label><input value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
                   <div><label className="text-xs text-gray-500 mb-1 block">Email</label><input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
                   <div><label className="text-xs text-gray-500 mb-1 block">Date of Birth</label><input type="date" value={form.dateOfBirth} onChange={(e) => setForm((p) => ({ ...p, dateOfBirth: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
                 </div>
               </div>
               <div><h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">License</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="text-xs text-gray-500 mb-1 block">License Number</label><input value={form.licenseNumber} onChange={(e) => setForm((p) => ({ ...p, licenseNumber: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
                   <div><label className="text-xs text-gray-500 mb-1 block">License Expires</label><input type="datetime-local" value={form.licenseExpiresAt} onChange={(e) => setForm((p) => ({ ...p, licenseExpiresAt: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
                 </div>
               </div>
               <div><h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Emergency Contact</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="text-xs text-gray-500 mb-1 block">Name</label><input value={form.ecName} onChange={(e) => setForm((p) => ({ ...p, ecName: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
                   <div><label className="text-xs text-gray-500 mb-1 block">Phone</label><input value={form.ecPhone} onChange={(e) => setForm((p) => ({ ...p, ecPhone: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
                   <div className="col-span-2"><label className="text-xs text-gray-500 mb-1 block">Address</label><input value={form.ecAddress} onChange={(e) => setForm((p) => ({ ...p, ecAddress: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
@@ -213,7 +213,7 @@ export default function DriverDetailPage({ params }) {
                 </div>
               </div>
               <div><h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Assignment</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="text-xs text-gray-500 mb-1 block">Status</label>
                     <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                       {DRIVER_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}

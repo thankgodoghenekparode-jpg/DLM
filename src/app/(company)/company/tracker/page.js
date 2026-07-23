@@ -25,13 +25,13 @@ function StepTracker({ currentStep }) {
       {TRACKER_STEPS.map((step, i) => (
         <div key={step} className="relative flex flex-col items-center z-10" style={{ width: `${100 / TRACKER_STEPS.length}%` }}>
           <div
-            className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium border-2 ${
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium border-2 ${
               i <= currentStep ? "bg-primary border-primary text-white" : "bg-white border-gray-300 text-gray-400"
             }`}
           >
             {i <= currentStep ? "✓" : i + 1}
           </div>
-          <p className={`text-[9px] mt-1.5 text-center whitespace-nowrap ${i <= currentStep ? "text-primary font-medium" : "text-gray-400"}`}>
+          <p className={`text-[10px] mt-1.5 text-center whitespace-nowrap ${i <= currentStep ? "text-primary font-medium" : "text-gray-400"}`}>
             {step}
           </p>
         </div>

@@ -89,7 +89,7 @@ export default function DriverLayout({ children }) {
                 </div>
                 <DriverLogoutButton />
               </header>
-              <main className="flex-1 p-4 sm:p-6 lg:p-6 overflow-auto">{children}</main>
+              <main className="flex-1 p-4 sm:p-6 lg:p-6 lg:pb-6 pb-20 overflow-auto">{children}</main>
               <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 px-2 py-1">
                 <div className="flex justify-around">
                   {NAV_ITEMS.map((item) => {

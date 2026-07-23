@@ -76,7 +76,7 @@ export default function VehicleDetailPage({ params }) {
             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Truck size={16} /> Vehicle Details</h3>
             <button onClick={openEdit} className="text-gray-400 hover:text-primary p-1" title="Edit vehicle"><Pencil size={16} /></button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
             <div><span className="text-gray-500">Plate Number</span><p className="font-medium">{vehicle.plateNumber}</p></div>
             <div><span className="text-gray-500">Make & Model</span><p className="font-medium">{vehicle.makeModel}</p></div>
             <div><span className="text-gray-500">Vehicle Type</span><p className="font-medium">{getLabel(VEHICLE_TYPES, vehicle.type)}</p></div>

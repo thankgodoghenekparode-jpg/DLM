@@ -97,7 +97,7 @@ export default function CompanyRegisterPage() {
           <p className="text-sm text-gray-500 mt-2">Create your account</p>
         </div>
 
-        <div className="flex items-center gap-2 mb-6 justify-center">
+        <div className="flex items-center gap-2 mb-6 justify-center overflow-x-auto pb-2">
           {STEPS.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${i + 1 <= step ? "bg-primary text-white" : "bg-gray-200 text-gray-500"}`}>{i + 1}</span>

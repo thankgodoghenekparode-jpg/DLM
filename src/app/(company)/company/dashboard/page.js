@@ -53,7 +53,7 @@ export default function CompanyDashboard() {
             <Link
               key={action.href}
               href={action.href}
-              className={`${action.color} min-h-[220px] rounded-2xl p-7 sm:p-8 flex flex-col justify-between shadow-sm transition-transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2`}
+              className={`${action.color} min-h-[180px] sm:min-h-[220px] rounded-2xl p-7 sm:p-8 flex flex-col justify-between shadow-sm transition-transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${action.iconWrap}`}>

@@ -176,7 +176,7 @@ export default function TicketDetailPage({ params }) {
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">Trip Details</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Origin</span><p className="font-medium">{ticket.originAddress || "—"}</p></div>
               <div><span className="text-gray-500">Destination</span><p className="font-medium">{ticket.destinationAddress || "—"}</p></div>
               <div><span className="text-gray-500">Cargo</span><p className="font-medium">{ticket.cargoDescription || "—"}</p></div>
@@ -188,7 +188,7 @@ export default function TicketDetailPage({ params }) {
 
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">Vehicle & Driver</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Vehicle</span><p className="font-medium">{assignedVehicle?.plateNumber || assignedVehicle?.plate || "—"}</p></div>
               <div><span className="text-gray-500">Driver</span><p className="font-medium">{assignedDriver?.fullName || assignedDriver?.name || "—"}</p></div>
             </div>
@@ -197,7 +197,7 @@ export default function TicketDetailPage({ params }) {
           {ticket.consignee && (
             <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
               <h3 className="text-sm font-semibold text-gray-900">Consignee</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div><span className="text-gray-500">Name</span><p className="font-medium">{ticket.consignee.name || "—"}</p></div>
                 <div><span className="text-gray-500">Phone</span><p className="font-medium">{ticket.consignee.phone || "—"}</p></div>
               </div>
@@ -207,7 +207,7 @@ export default function TicketDetailPage({ params }) {
           {ticket.receiver && (
             <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
               <h3 className="text-sm font-semibold text-gray-900">Receiver</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div><span className="text-gray-500">Name</span><p className="font-medium">{ticket.receiver.name || "—"}</p></div>
                 <div><span className="text-gray-500">Phone</span><p className="font-medium">{ticket.receiver.phone || "—"}</p></div>
                 <div><span className="text-gray-500">Address</span><p className="font-medium">{ticket.receiver.address || "—"}</p></div>

@@ -197,7 +197,7 @@ export default function CreateTicketPage() {
             <label className="text-xs text-gray-500">Description *</label>
             <input value={form.description} onChange={(e) => updateForm("description", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="e.g. Samsung TV" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-500 flex items-center gap-1"><Weight size={10} /> Weight (kg) *</label>
               <input type="number" step="0.1" min="0" value={form.weight} onChange={(e) => updateForm("weight", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="0.0" />

@@ -182,7 +182,7 @@ export default function DriverTripDetailPage({ params }) {
                   <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                     <Clock size={16} /> Trip Details
                   </h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className="col-span-2">
                       <span className="text-gray-500">Route</span>
                       <p className="font-medium">{ticket.originAddress} → {ticket.destinationAddress}</p>
