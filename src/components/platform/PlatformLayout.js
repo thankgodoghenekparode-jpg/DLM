@@ -54,7 +54,7 @@ function AuthGuard({ children }) {
 
   if (!isAuthenticated && !isLogin) return null;
 
-  if (hasPlatformAccess) return children;
+  if (isLogin || hasPlatformAccess) return children;
 
   return null;
 }
