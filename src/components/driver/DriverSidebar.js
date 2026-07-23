@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { ClipboardList, History, User, Bell } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { ClipboardList, History, User, Bell, LogOut } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Today's Trips", href: "/driver/trips", icon: ClipboardList },
@@ -14,6 +15,13 @@ const NAV_ITEMS = [
 
 export default function DriverSidebar({ open, onClose, collapsed }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/driver/login");
+  };
 
   return (
     <>
@@ -40,6 +48,12 @@ export default function DriverSidebar({ open, onClose, collapsed }) {
             );
           })}
         </nav>
+        <div className={`absolute bottom-0 left-0 right-0 border-t border-gray-700 ${collapsed ? "px-0" : "px-2"} py-3`}>
+          <button onClick={handleLogout} className={`flex items-center w-full text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors ${collapsed ? "justify-center px-0 py-3" : "gap-3 px-4 py-2.5"}`} title={collapsed ? "Logout" : undefined}>
+            <LogOut size={20} className="flex-shrink-0" />
+            {!collapsed && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
     </>
   );

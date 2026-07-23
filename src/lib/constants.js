@@ -39,6 +39,7 @@ export const TICKET_STATUSES = [
   { value: "PENDING_ASSIGNMENT", label: "Pending Assignment" },
   { value: "ASSIGNED", label: "Assigned" },
   { value: "IN_TRANSIT", label: "In Transit" },
+  { value: "ARRIVED", label: "Arrived" },
   { value: "DELIVERED", label: "Delivered" },
   { value: "DISPUTED", label: "Disputed" },
   { value: "CANCELLED", label: "Cancelled" },

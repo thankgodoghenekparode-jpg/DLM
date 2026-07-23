@@ -76,7 +76,7 @@ export default function ReportsPage() {
     if (format === "json") {
       setInvoicesLoading(true);
       try {
-        const data = await api.get("/billing/invoices");
+        const data = await api.get("/wallet/statements").catch(() => []);
         setInvoices(Array.isArray(data) ? data : []);
       } catch (err) {
         alert(err.message || "Failed to fetch invoices");
@@ -84,7 +84,7 @@ export default function ReportsPage() {
         setInvoicesLoading(false);
       }
     } else {
-      await downloadAsFormat("/billing/invoices", format, "invoices");
+      await downloadAsFormat("/wallet/statements", format, "invoices");
     }
   };
 

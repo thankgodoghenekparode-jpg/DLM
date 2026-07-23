@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import DataTable from "@/components/shared/DataTable";
 import Button from "@/components/shared/Button";
 import Modal from "@/components/shared/Modal";
-import AddressMapPicker from "@/components/shared/AddressMapPicker";
+import DataTable from "@/components/shared/DataTable";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Plus, Pencil, Loader2, AlertCircle } from "lucide-react";
@@ -18,7 +17,7 @@ const columns = (onEdit) => [
   { header: "", accessor: "actions", render: (row) => <button onClick={() => onEdit(row)} className="text-gray-400 hover:text-primary"><Pencil size={16} /></button> },
 ];
 
-const emptyForm = { name: "", address: "", phone: "", managerId: "", latitude: "", longitude: "" };
+const emptyForm = { name: "", address: "", phone: "", managerId: "" };
 
 export default function BranchesPage() {
   const { user } = useAuth();
@@ -36,8 +35,8 @@ export default function BranchesPage() {
 
   useEffect(() => {
     if (!tenantId) return;
-    api.get(`/tenants/${tenantId}`)
-      .then((data) => setBranches(data.branches || []))
+    api.get("/branches")
+      .then((data) => setBranches(Array.isArray(data) ? data : []))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [tenantId]);
@@ -53,8 +52,6 @@ export default function BranchesPage() {
       address: branch.address || "",
       phone: branch.phone || "",
       managerId: branch.managerId || "",
-      latitude: branch.geolocation?.latitude ?? "",
-      longitude: branch.geolocation?.longitude ?? "",
     });
     setShowEdit(true);
   };
@@ -66,10 +63,6 @@ export default function BranchesPage() {
       const body = {
         name: form.name.trim(),
         address: form.address.trim(),
-        geolocation: {
-          latitude: parseFloat(form.latitude) || 0,
-          longitude: parseFloat(form.longitude) || 0,
-        },
       };
       if (form.phone.trim()) body.phone = form.phone.trim();
       if (form.managerId.trim()) body.managerId = form.managerId.trim();
@@ -91,10 +84,6 @@ export default function BranchesPage() {
       const body = {
         name: form.name.trim(),
         address: form.address.trim(),
-        geolocation: {
-          latitude: parseFloat(form.latitude) || 0,
-          longitude: parseFloat(form.longitude) || 0,
-        },
       };
       if (form.phone.trim()) body.phone = form.phone.trim();
       if (form.managerId.trim()) body.managerId = form.managerId.trim();
@@ -144,18 +133,9 @@ export default function BranchesPage() {
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add Branch">
         <div className="space-y-3">
           <div><label className="text-xs text-gray-500 mb-1 block">Branch Name *</label><input value={form.name} onChange={(e) => updateForm("name", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" required /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Address *</label><input value={form.address} onChange={(e) => updateForm("address", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" required /></div>
           <div><label className="text-xs text-gray-500 mb-1 block">Phone</label><input type="tel" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
           <div><label className="text-xs text-gray-500 mb-1 block">Manager ID</label><input value={form.managerId} onChange={(e) => updateForm("managerId", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Location *</label>
-            <AddressMapPicker
-              address={form.address}
-              latitude={form.latitude ? Number(form.latitude) : undefined}
-              longitude={form.longitude ? Number(form.longitude) : undefined}
-              onChange={({ address, latitude, longitude }) => setForm((prev) => ({ ...prev, address, latitude: String(latitude), longitude: String(longitude) }))}
-              required
-            />
-          </div>
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setShowAdd(false)}>Cancel</Button>
             <Button className="flex-1" onClick={handleAdd} disabled={submitting}>
@@ -169,18 +149,9 @@ export default function BranchesPage() {
       <Modal open={showEdit} onClose={() => setShowEdit(false)} title="Edit Branch">
         <div className="space-y-3">
           <div><label className="text-xs text-gray-500 mb-1 block">Branch Name *</label><input value={form.name} onChange={(e) => updateForm("name", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" required /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Address *</label><input value={form.address} onChange={(e) => updateForm("address", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" required /></div>
           <div><label className="text-xs text-gray-500 mb-1 block">Phone</label><input type="tel" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
           <div><label className="text-xs text-gray-500 mb-1 block">Manager ID</label><input value={form.managerId} onChange={(e) => updateForm("managerId", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Location *</label>
-            <AddressMapPicker
-              address={form.address}
-              latitude={form.latitude ? Number(form.latitude) : undefined}
-              longitude={form.longitude ? Number(form.longitude) : undefined}
-              onChange={({ address, latitude, longitude }) => setForm((prev) => ({ ...prev, address, latitude: String(latitude), longitude: String(longitude) }))}
-              required
-            />
-          </div>
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setShowEdit(false)}>Cancel</Button>
             <Button className="flex-1" onClick={handleEdit} disabled={submitting}>

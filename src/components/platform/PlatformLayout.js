@@ -19,23 +19,32 @@ function AuthGuard({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const isLogin = pathname === "/platform/login";
+  const [redirecting, setRedirecting] = useState(false);
+
+  const hasPlatformAccess = isAuthenticated && user?.role && (ROLE_PERMISSIONS[user.role] || []).some((p) => p.startsWith("platform:"));
+  const hasRequiredPerm = hasPlatformAccess && (ROLE_PERMISSIONS[user.role] || []).includes(getPermissionFromPath(pathname));
 
   useEffect(() => {
     if (loading) return;
     if (!isAuthenticated && !isLogin) {
+      setRedirecting(true);
       router.replace("/platform/login");
     } else if (isAuthenticated && user?.role) {
       const perms = ROLE_PERMISSIONS[user.role] || [];
       if (!perms.some((p) => p.startsWith("platform:"))) {
+        setRedirecting(true);
         router.replace("/platform/login");
       } else {
         const required = getPermissionFromPath(pathname);
-        if (!perms.includes(required)) router.replace("/platform/dashboard");
+        if (!perms.includes(required)) {
+          setRedirecting(true);
+          router.replace("/platform/dashboard");
+        }
       }
     }
   }, [loading, isAuthenticated, isLogin, user, router, pathname]);
 
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-gray-400" size={28} />
@@ -45,14 +54,9 @@ function AuthGuard({ children }) {
 
   if (!isAuthenticated && !isLogin) return null;
 
-  if (isAuthenticated && user?.role) {
-    const perms = ROLE_PERMISSIONS[user.role] || [];
-    if (!perms.some((p) => p.startsWith("platform:"))) return null;
-    const required = getPermissionFromPath(pathname);
-    if (!perms.includes(required)) return null;
-  }
+  if (hasPlatformAccess) return children;
 
-  return children;
+  return null;
 }
 
 export default function PlatformLayout({ children }) {

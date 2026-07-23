@@ -1,0 +1,17 @@
+▲ Next.js 16.2.10 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.18.6:3000
+✓ Ready in 889ms
+⚠ Attempted to load @next/swc-win32-x64-msvc, but an error occurred: \\?\C:\Users\hp\Downloads\DLM\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node is not a valid Win32 application.
+\\?\C:\Users\hp\Downloads\DLM\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node
+  Skipping creating a lockfile at C:\Users\hp\Downloads\DLM\.next\dev\lock because we're using WASM bindings
+
+○ Compiling / ...
+ GET / 200 in 10.2s (next.js: 9.8s, application-code: 382ms)
+ GET / 200 in 96ms (next.js: 4ms, application-code: 92ms)
+ GET /company/login 200 in 2.7s (next.js: 2.6s, application-code: 94ms)
+ GET /company/login 200 in 70ms (next.js: 9ms, application-code: 61ms)
+ GET /company/login 200 in 357ms (next.js: 18ms, application-code: 340ms)
+ GET / 200 in 331ms (next.js: 19ms, application-code: 312ms)
+ GET /company/login 200 in 43ms (next.js: 5ms, application-code: 37ms)
+^C

@@ -14,7 +14,7 @@ const NAV_GROUPS = [
     defaultOpen: true,
     items: [
       { label: "Dashboard", href: "/company/dashboard", icon: LayoutDashboard, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "DISPATCH_MANAGER", "BRANCH_ADMIN"] },
-      { label: "Create Parcel", href: "/company/create-parcel", icon: PackagePlus, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "DISPATCH_MANAGER", "BRANCH_ADMIN"] },
+      { label: "Create Parcel", href: "/company/tickets/create", icon: PackagePlus, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "DISPATCH_MANAGER", "BRANCH_ADMIN"] },
     ],
   },
   {

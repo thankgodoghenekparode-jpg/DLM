@@ -5,29 +5,24 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Button from "@/components/shared/Button";
 import StatusBadge from "@/components/shared/StatusBadge";
-import Modal from "@/components/shared/Modal";
 import { api } from "@/lib/api";
 import { TICKET_STATUSES, TICKET_PRIORITIES, getLabel } from "@/lib/constants";
-import { Package, Weight, ImageIcon, MapPin, Loader2, X, Paperclip } from "lucide-react";
+import { Package, ImageIcon, MapPin, Loader2, Paperclip } from "lucide-react";
 
 function formatMoney(amount) {
   return `NGN ${Number(amount || 0).toLocaleString()}`;
 }
 
 function formatSize(size) {
-  if (!size) return "Not set";
-  const values = [size.width, size.length, size.height].map((value) => (value ? Number(value).toLocaleString() : "-"));
-  return values.every((value) => value === "-") ? "Not set" : values.join(" x ");
+  if (!size) return "—";
+  const values = [size.width, size.length, size.height].map((v) => (v ? Number(v).toLocaleString() : "-"));
+  return values.every((v) => v === "-") ? "—" : values.join(" x ");
 }
 
 function getTicketAssignment(ticket) {
   if (ticket?.currentAssignment) return ticket.currentAssignment;
   if (!Array.isArray(ticket?.assignments) || ticket.assignments.length === 0) return null;
-
-  return (
-    ticket.assignments.find((assignment) => ["ACCEPTED", "PENDING_DRIVER_RESPONSE", "PENDING"].includes(assignment.status)) ||
-    ticket.assignments[ticket.assignments.length - 1]
-  );
+  return ticket.assignments.find((a) => ["ACCEPTED", "PENDING_DRIVER_RESPONSE", "PENDING"].includes(a.status)) || ticket.assignments[ticket.assignments.length - 1];
 }
 
 export default function TicketDetailPage({ params }) {
@@ -40,27 +35,13 @@ export default function TicketDetailPage({ params }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [showAttachment, setShowAttachment] = useState(false);
-  const [attaching, setAttaching] = useState(false);
-  const [attachmentType, setAttachmentType] = useState("WAYBILL");
-
-  // Cancel modal
-  const [showCancel, setShowCancel] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
-
-  // Close modal
-  const [showClose, setShowClose] = useState(false);
-  const [closeNote, setCloseNote] = useState("");
-
-  // Confirm arrival modal
   const [showConfirmArrival, setShowConfirmArrival] = useState(false);
-  const [arrivalName, setArrivalName] = useState("");
-  const [arrivalPhone, setArrivalPhone] = useState("");
-  const [arrivalAddress, setArrivalAddress] = useState("");
-  const [arrivalEmail, setArrivalEmail] = useState("");
+
+  const [showAssign, setShowAssign] = useState(false);
+  const [assignVehicleId, setAssignVehicleId] = useState("");
+  const [assignDriverId, setAssignDriverId] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -70,11 +51,8 @@ export default function TicketDetailPage({ params }) {
         api.get("/drivers").catch(() => []),
         api.get("/vehicles").catch(() => []),
       ]);
-      if (!ticketData) {
-        setError("Failed to load ticket");
-      } else {
-        setTicket(ticketData);
-      }
+      if (!ticketData) setError("Failed to load ticket");
+      else setTicket(ticketData);
       setItems(Array.isArray(itemsData) ? itemsData : []);
       setDrivers(Array.isArray(driverData) ? driverData : []);
       setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
@@ -84,62 +62,10 @@ export default function TicketDetailPage({ params }) {
   }, [id]);
 
   const refreshTicket = async () => {
-    const [ticketData, itemsData, driverData, vehicleData] = await Promise.all([
-      api.get(`/tickets/${id}`).catch(() => null),
-      api.get(`/items/ticket/${id}`).catch(() => []),
-      api.get("/drivers").catch(() => []),
-      api.get("/vehicles").catch(() => []),
-    ]);
-    if (ticketData) setTicket(ticketData);
+    const data = await api.get(`/tickets/${id}`).catch(() => null);
+    if (data) setTicket(data);
+    const itemsData = await api.get(`/items/ticket/${id}`).catch(() => []);
     setItems(Array.isArray(itemsData) ? itemsData : []);
-    setDrivers(Array.isArray(driverData) ? driverData : []);
-    setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
-  };
-
-  const handleAttachment = async (file) => {
-    if (!file) return;
-    setAttaching(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "attachments");
-      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${api.getToken()}` },
-        body: formData,
-      });
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => ({ message: "Upload failed" }));
-        throw new Error(err.message || "Upload failed");
-      }
-      const uploadData = await uploadRes.json();
-      await api.post(`/tickets/${id}/attachments`, {
-        type: attachmentType,
-        file: { fileName: file.name, fileUrl: uploadData.url },
-      });
-      setShowAttachment(false);
-      setAttachmentType("WAYBILL");
-      alert("Attachment added successfully");
-    } catch (err) {
-      alert(err.message || "Failed to add attachment");
-    } finally {
-      setAttaching(false);
-    }
-  };
-
-  const handleCancel = async () => {
-    if (!cancelReason.trim() || cancelReason.trim().length < 3) return;
-    setActionLoading(true);
-    try {
-      await api.patch(`/tickets/${id}/cancel`, { reason: cancelReason.trim() });
-      await refreshTicket();
-      setShowCancel(false);
-      setCancelReason("");
-    } catch (err) {
-      alert(err.message || "Failed to cancel ticket");
-    } finally {
-      setActionLoading(false);
-    }
   };
 
   const handleStartTrip = async () => {
@@ -154,36 +80,32 @@ export default function TicketDetailPage({ params }) {
     }
   };
 
-  const handleClose = async () => {
+  const handleAssign = async () => {
+    if (!assignVehicleId || !assignDriverId) return;
     setActionLoading(true);
     try {
-      await api.patch(`/tickets/${id}/close`, { note: closeNote.trim() || undefined });
+      if (ticket.status === "DRAFT") {
+        await api.post(`/tickets/${id}/submit`);
+      }
+      await api.patch(`/tickets/${id}/assign`, {
+        vehicleId: assignVehicleId,
+        driverId: assignDriverId,
+      });
       await refreshTicket();
-      setShowClose(false);
-      setCloseNote("");
+      setShowAssign(false);
     } catch (err) {
-      alert(err.message || "Failed to close ticket");
+      alert(err.message || "Failed to assign");
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleConfirmArrival = async () => {
-    if (!arrivalName.trim() || !arrivalPhone.trim() || !arrivalAddress.trim()) return;
     setActionLoading(true);
     try {
-      await api.patch(`/tickets/${id}/confirm-arrival`, {
-        receiverName: arrivalName.trim(),
-        receiverPhone: arrivalPhone.trim(),
-        receiverAddress: arrivalAddress.trim(),
-        receiverEmail: arrivalEmail.trim() || undefined,
-      });
-      await refreshTicket();
+      await api.patch(`/tickets/${id}/confirm-arrival`, {});
+      setTicket((prev) => ({ ...prev, status: "ARRIVED" }));
       setShowConfirmArrival(false);
-      setArrivalName("");
-      setArrivalPhone("");
-      setArrivalAddress("");
-      setArrivalEmail("");
     } catch (err) {
       alert(err.message || "Failed to confirm arrival");
     } finally {
@@ -192,11 +114,7 @@ export default function TicketDetailPage({ params }) {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="animate-spin text-gray-400" size={28} />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin text-gray-400" size={28} /></div>;
   }
 
   if (error) {
@@ -216,21 +134,21 @@ export default function TicketDetailPage({ params }) {
   const assignment = getTicketAssignment(ticket);
   const assignedDriverId = ticket.driverId || assignment?.driverId;
   const assignedVehicleId = ticket.vehicleId || assignment?.vehicleId;
-  const assignedDriver = drivers.find((driver) => driver.id === assignedDriverId);
-  const assignedVehicle = vehicles.find((vehicle) => vehicle.id === assignedVehicleId);
-  const driverLabel = assignedDriver?.fullName || assignedDriver?.name || assignedDriverId || "—";
-  const vehicleLabel = assignedVehicle?.plateNumber || assignedVehicle?.plate || assignedVehicleId || "—";
+  const assignedDriver = drivers.find((d) => d.id === assignedDriverId);
+  const assignedVehicle = vehicles.find((v) => v.id === assignedVehicleId);
+
+  const canStart = ticket.status === "ASSIGNED";
+  const canConfirmArrival = ticket.status === "IN_TRANSIT";
+  const confirmedArrival = ["ARRIVED", "DELIVERED", "CLOSED"].includes(ticket.status);
+  const canAssign = ["DRAFT", "PENDING_ASSIGNMENT"].includes(ticket.status) && !assignedVehicleId;
 
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
         <button onClick={() => router.push("/company/tickets")} className="text-sm text-gray-500 hover:text-gray-700 mb-2">← Tickets</button>
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-gray-900">{ticket.ticketNumber}</h1>
-            <StatusBadge status={ticket.status} />
-          </div>
-          <span className="text-xs text-gray-400">{ticket.priority && getLabel(TICKET_PRIORITIES, ticket.priority)}</span>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-gray-900">{ticket.ticketNumber || ticket.id}</h1>
+          <StatusBadge status={ticket.status} />
         </div>
       </div>
 
@@ -261,21 +179,18 @@ export default function TicketDetailPage({ params }) {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Origin</span><p className="font-medium">{ticket.originAddress || "—"}</p></div>
               <div><span className="text-gray-500">Destination</span><p className="font-medium">{ticket.destinationAddress || "—"}</p></div>
-              <div><span className="text-gray-500">Priority</span><p className="font-medium">{ticket.priority ? getLabel(TICKET_PRIORITIES, ticket.priority) : "—"}</p></div>
               <div><span className="text-gray-500">Cargo</span><p className="font-medium">{ticket.cargoDescription || "—"}</p></div>
-              <div><span className="text-gray-500">Weight</span><p className="font-medium">{ticket.cargoWeightKg ? `${ticket.cargoWeightKg} kg` : "—"}</p></div>
-              <div><span className="text-gray-500">Price</span><p className="font-medium">{ticket.customerPrice ? `₦${ticket.customerPrice.amount?.toLocaleString()}` : "—"}</p></div>
+              <div><span className="text-gray-500">Priority</span><p className="font-medium">{ticket.priority ? getLabel(TICKET_PRIORITIES, ticket.priority) : "—"}</p></div>
+              <div><span className="text-gray-500">Price</span><p className="font-medium">{ticket.customerPrice ? formatMoney(ticket.customerPrice.amount) : "—"}</p></div>
               <div><span className="text-gray-500">Created</span><p className="font-medium">{ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : "—"}</p></div>
-              <div><span className="text-gray-500">Pickup</span><p className="font-medium">{ticket.requestedPickupAt ? new Date(ticket.requestedPickupAt).toLocaleString() : "—"}</p></div>
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">Vehicle & Driver</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-gray-500">Vehicle</span><p className="font-medium">{vehicleLabel}</p></div>
-              <div><span className="text-gray-500">Driver</span><p className="font-medium">{driverLabel}</p></div>
-              {assignment?.status && <div><span className="text-gray-500">Assignment</span><p className="font-medium">{assignment.status}</p></div>}
+              <div><span className="text-gray-500">Vehicle</span><p className="font-medium">{assignedVehicle?.plateNumber || assignedVehicle?.plate || "—"}</p></div>
+              <div><span className="text-gray-500">Driver</span><p className="font-medium">{assignedDriver?.fullName || assignedDriver?.name || "—"}</p></div>
             </div>
           </div>
 
@@ -285,7 +200,6 @@ export default function TicketDetailPage({ params }) {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-gray-500">Name</span><p className="font-medium">{ticket.consignee.name || "—"}</p></div>
                 <div><span className="text-gray-500">Phone</span><p className="font-medium">{ticket.consignee.phone || "—"}</p></div>
-                <div className="col-span-2"><span className="text-gray-500">Address</span><p className="font-medium">{ticket.consignee.address || "—"}</p></div>
               </div>
             </div>
           )}
@@ -297,7 +211,6 @@ export default function TicketDetailPage({ params }) {
                 <div><span className="text-gray-500">Name</span><p className="font-medium">{ticket.receiver.name || "—"}</p></div>
                 <div><span className="text-gray-500">Phone</span><p className="font-medium">{ticket.receiver.phone || "—"}</p></div>
                 <div><span className="text-gray-500">Address</span><p className="font-medium">{ticket.receiver.address || "—"}</p></div>
-                {ticket.receiver.email && <div><span className="text-gray-500">Email</span><p className="font-medium">{ticket.receiver.email}</p></div>}
               </div>
             </div>
           )}
@@ -305,27 +218,26 @@ export default function TicketDetailPage({ params }) {
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">Actions</h3>
             <div className="flex flex-wrap gap-2">
-              {["PENDING_ASSIGNMENT", "ASSIGNED"].includes(ticket.status) && (
-                <Button variant="danger" size="sm" disabled={actionLoading} onClick={() => setShowCancel(true)}>Cancel</Button>
+              {canAssign && (
+                <Button size="sm" disabled={actionLoading} onClick={() => setShowAssign(true)}>
+                  Assign Vehicle & Driver
+                </Button>
               )}
-              {ticket.status === "ASSIGNED" && (
+              {canStart && (
                 <Button size="sm" disabled={actionLoading} onClick={handleStartTrip}>
                   {actionLoading ? <Loader2 className="animate-spin mr-1" size={14} /> : null} Start Trip
                 </Button>
               )}
-              {ticket.status === "IN_TRANSIT" && (
+              {canConfirmArrival && (
                 <Button size="sm" disabled={actionLoading} onClick={() => setShowConfirmArrival(true)}>
                   Confirm Arrival
                 </Button>
               )}
-              {ticket.status === "DELIVERED" && (
-                <Button size="sm" disabled={actionLoading} onClick={() => setShowClose(true)}>
-                  Close Ticket
+              {confirmedArrival && (
+                <Button size="sm" disabled>
+                  Confirmed
                 </Button>
               )}
-              <Button variant="secondary" size="sm" onClick={() => setShowAttachment(true)}>
-                <Paperclip size={14} className="mr-1" /> Attach
-              </Button>
             </div>
           </div>
         </div>
@@ -334,13 +246,13 @@ export default function TicketDetailPage({ params }) {
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Package size={16} /> Items ({items.length})</h3>
             {items.length === 0 ? (
-              <p className="text-sm text-gray-400">No items added</p>
+              <p className="text-sm text-gray-400">No items</p>
             ) : (
               <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
                 {items.map((item) => (
-                  <div key={item.id} className="py-3 space-y-2 cursor-pointer hover:bg-gray-50 rounded-lg transition-colors px-2 -mx-2" onClick={() => setSelectedItem(item)}>
+                  <div key={item.id} className="py-3 space-y-2 px-2 -mx-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400 font-mono">{item.id}</span>
+                      <span className="text-xs text-gray-400 font-mono">{item.itemNumber || item.id}</span>
                       <span className="text-xs font-medium">{item.weight} kg</span>
                     </div>
                     <div className="flex items-start gap-3">
@@ -351,7 +263,8 @@ export default function TicketDetailPage({ params }) {
                         <p className="text-sm font-medium text-gray-900">{item.description}</p>
                         <p className="text-xs text-gray-500">Amount: {formatMoney(item.amount)}</p>
                         <p className="text-xs text-gray-500">Size: {formatSize(item.size)}</p>
-                        <p className="text-xs text-gray-400 mt-1">Click to view details</p>
+                        {item.senderName && <p className="text-xs text-gray-400 mt-1">From: {item.senderName}</p>}
+                        {item.receiverName && <p className="text-xs text-gray-400">To: {item.receiverName}</p>}
                       </div>
                     </div>
                   </div>
@@ -384,123 +297,44 @@ export default function TicketDetailPage({ params }) {
         </div>
       </div>
 
-      {/* Item detail modal */}
-      <Modal open={!!selectedItem} onClose={() => setSelectedItem(null)} title="Item Details">
-        {selectedItem && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {selectedItem.pictureUrl ? <Image src={selectedItem.pictureUrl} alt="" width={64} height={64} className="w-full h-full object-cover" unoptimized /> : <ImageIcon size={28} className="text-gray-300" />}
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">{selectedItem.description}</p>
-                <p className="text-xs text-gray-400 font-mono">{selectedItem.id}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-gray-500">Weight</span><p className="font-medium">{selectedItem.weight} kg</p></div>
-              <div><span className="text-gray-500">Amount</span><p className="font-medium">{formatMoney(selectedItem.amount)}</p></div>
-              <div><span className="text-gray-500">Size</span><p className="font-medium">{formatSize(selectedItem.size)}</p></div>
-              {selectedItem.status && <div className="col-span-2"><span className="text-gray-500">Status</span><p className="font-medium">{selectedItem.status}</p></div>}
-            </div>
-            {selectedItem.senderName && (
-              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                <p className="text-xs font-semibold text-gray-500 flex items-center gap-1"><MapPin size={12} /> Sender</p>
-                <p className="text-sm font-medium">{selectedItem.senderName}</p>
-                <p className="text-xs text-gray-500">{[selectedItem.senderEmail, selectedItem.senderPhone].filter(Boolean).join(" · ")}</p>
-              </div>
-            )}
-            {selectedItem.receiverName && (
-              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                <p className="text-xs font-semibold text-gray-500 flex items-center gap-1"><MapPin size={12} /> Receiver</p>
-                <p className="text-sm font-medium">{selectedItem.receiverName}</p>
-                <p className="text-xs text-gray-500">{[selectedItem.receiverEmail, selectedItem.receiverPhone].filter(Boolean).join(" · ")}</p>
-              </div>
-            )}
-            <div className="border-t border-gray-200 pt-3">
-              <Button className="w-full" onClick={() => setSelectedItem(null)}>Close</Button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      {/* Attachment modal */}
-      {showAttachment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !attaching && setShowAttachment(false)}>
+      {showAssign && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !actionLoading && setShowAssign(false)}>
           <div className="bg-white rounded-xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"><Paperclip size={18} /> Add Attachment</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Assign Vehicle & Driver</h3>
             <div className="space-y-3">
-              <div><label className="text-xs text-gray-500 mb-1 block">Type</label>
-                <select value={attachmentType} onChange={(e) => setAttachmentType(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                  <option value="WAYBILL">Waybill</option>
-                  <option value="CUSTOMER_INVOICE">Customer Invoice</option>
-                  <option value="POD_PHOTO">POD Photo</option>
-                  <option value="OTHER">Other</option>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Vehicle *</label>
+                <select value={assignVehicleId} onChange={(e) => setAssignVehicleId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                  <option value="">Select vehicle</option>
+                  {vehicles.map((v) => <option key={v.id} value={v.id}>{v.plateNumber || v.plate || v.id}</option>)}
                 </select>
               </div>
               <div>
-                <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary/50">
-                  <Paperclip size={24} className="text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-500">Select file</span>
-                  <input type="file" className="hidden" disabled={attaching} onChange={(e) => { const f = e.target.files[0]; if (f) handleAttachment(f); }} />
-                </label>
+                <label className="text-xs text-gray-500 mb-1 block">Driver *</label>
+                <select value={assignDriverId} onChange={(e) => setAssignDriverId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                  <option value="">Select driver</option>
+                  {drivers.map((d) => <option key={d.id} value={d.id}>{d.fullName || d.name} {d.phone ? `(${d.phone})` : ""}</option>)}
+                </select>
               </div>
             </div>
             <div className="flex gap-3 mt-4">
-              <Button variant="secondary" className="flex-1" disabled={attaching} onClick={() => setShowAttachment(false)}>Cancel</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cancel modal */}
-      {showCancel && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !actionLoading && setShowCancel(false)}>
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cancel Ticket?</h3>
-            <p className="text-sm text-gray-500 mb-3">Provide a reason (min 3 characters).</p>
-            <textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4" placeholder="Reason for cancellation..." />
-            <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" disabled={actionLoading} onClick={() => setShowCancel(false)}>Keep</Button>
-              <Button variant="danger" className="flex-1" disabled={actionLoading || cancelReason.trim().length < 3} onClick={handleCancel}>
-                {actionLoading ? <Loader2 className="animate-spin mr-1" size={14} /> : null} Yes, Cancel
+              <Button variant="secondary" className="flex-1" disabled={actionLoading} onClick={() => setShowAssign(false)}>Cancel</Button>
+              <Button className="flex-1" disabled={actionLoading || !assignVehicleId || !assignDriverId} onClick={handleAssign}>
+                {actionLoading ? <Loader2 className="animate-spin mr-1" size={14} /> : null} Assign
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Close modal */}
-      {showClose && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !actionLoading && setShowClose(false)}>
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Close Ticket?</h3>
-            <p className="text-sm text-gray-500 mb-3">Optionally add a closing note.</p>
-            <textarea value={closeNote} onChange={(e) => setCloseNote(e.target.value)} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4" placeholder="Note (optional)..." />
-            <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" disabled={actionLoading} onClick={() => setShowClose(false)}>Cancel</Button>
-              <Button className="flex-1" disabled={actionLoading} onClick={handleClose}>
-                {actionLoading ? <Loader2 className="animate-spin mr-1" size={14} /> : null} Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm arrival modal */}
       {showConfirmArrival && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !actionLoading && setShowConfirmArrival(false)}>
           <div className="bg-white rounded-xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Arrival</h3>
-            <div className="space-y-3 mb-4">
-              <input value={arrivalName} onChange={(e) => setArrivalName(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Receiver name *" />
-              <input value={arrivalPhone} onChange={(e) => setArrivalPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Receiver phone *" />
-              <input value={arrivalAddress} onChange={(e) => setArrivalAddress(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Receiver address *" />
-              <input value={arrivalEmail} onChange={(e) => setArrivalEmail(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Receiver email (optional)" />
-            </div>
+            <p className="text-sm text-gray-500 mb-4">Confirm that this delivery has arrived at the destination?</p>
             <div className="flex gap-3">
               <Button variant="secondary" className="flex-1" disabled={actionLoading} onClick={() => setShowConfirmArrival(false)}>Cancel</Button>
-              <Button className="flex-1" disabled={actionLoading || !arrivalName.trim() || !arrivalPhone.trim() || !arrivalAddress.trim()} onClick={handleConfirmArrival}>
+              <Button className="flex-1" disabled={actionLoading} onClick={handleConfirmArrival}>
                 {actionLoading ? <Loader2 className="animate-spin mr-1" size={14} /> : null} Confirm
               </Button>
             </div>

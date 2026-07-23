@@ -7,7 +7,7 @@ const QUICK_ACTIONS = [
   {
     title: "Create Parcel",
     description: "Start a new dispatch and generate a ticket number.",
-    href: "/company/create-parcel",
+    href: "/company/tickets/create",
     icon: PackagePlus,
     color: "bg-primary text-white",
     iconWrap: "bg-white/20 text-white",

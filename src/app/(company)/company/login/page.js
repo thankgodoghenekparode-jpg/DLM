@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Button from "@/components/shared/Button";
@@ -59,9 +60,11 @@ export default function CompanyLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Link href="/">
-            <h1 className="text-2xl font-black text-gray-900">DLM</h1>
+          <Link href="/" className="inline-block">
+            <Image src="/logo.svg" alt="DLM" width={72} height={72} />
           </Link>
+          <h1 className="text-2xl font-black text-gray-900 mt-3">DLM</h1>
+          <p className="text-xs text-gray-400">Delivery Logistics Management</p>
           <p className="text-sm text-gray-500 mt-2">Sign in to your company account</p>
         </div>
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
@@ -81,6 +84,7 @@ export default function CompanyLoginPage() {
             <span className="text-gray-500">New here? <Link href="/company/register" className="text-primary hover:underline">Register</Link></span>
           </div>
         </form>
+        <p className="text-[10px] text-gray-300 text-center mt-6">Sponsored by Zarox IT Solution</p>
       </div>
     </div>
   );

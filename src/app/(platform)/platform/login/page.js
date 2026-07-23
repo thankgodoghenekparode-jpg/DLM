@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { ROLE_PERMISSIONS } from "@/lib/constants";
 import Button from "@/components/shared/Button";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
@@ -19,7 +21,7 @@ function parseError(message) {
 }
 
 export default function PlatformLoginPage() {
-  const { login, loading: authLoading, isAuthenticated } = useAuth();
+  const { login, loading: authLoading, isAuthenticated, user } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,16 +31,25 @@ export default function PlatformLoginPage() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.replace("/platform/dashboard");
+      const perms = ROLE_PERMISSIONS[user?.role] || [];
+      if (perms.some((p) => p.startsWith("platform:"))) {
+        router.replace("/platform/dashboard");
+      }
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, user, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await login(email, password, "/auth/platform/login");
+      const loggedInUser = await login(email, password, "/auth/platform/login");
+      const perms = ROLE_PERMISSIONS[loggedInUser?.role] || [];
+      if (!perms.some((p) => p.startsWith("platform:"))) {
+        setError("This account is not authorized for the platform portal.");
+        setLoading(false);
+        return;
+      }
       router.push("/platform/dashboard");
     } catch (err) {
       setError(parseError(err.message));
@@ -59,9 +70,11 @@ export default function PlatformLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Link href="/">
-            <h1 className="text-2xl font-black text-gray-900">DLM</h1>
+          <Link href="/" className="inline-block">
+            <Image src="/logo.svg" alt="DLM" width={72} height={72} />
           </Link>
+          <h1 className="text-2xl font-black text-gray-900 mt-3">DLM</h1>
+          <p className="text-xs text-gray-400">Delivery Logistics Management</p>
           <p className="text-sm text-gray-500 mt-2">Platform Admin Portal</p>
         </div>
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
@@ -78,6 +91,7 @@ export default function PlatformLoginPage() {
           <Button type="submit" className="w-full" disabled={loading}>{loading ? "Signing in..." : "Sign In"}</Button>
           <p className="text-xs text-center text-gray-500">Super admin & platform support only</p>
         </form>
+        <p className="text-[10px] text-gray-300 text-center mt-6">Sponsored by Zarox IT Solution</p>
       </div>
     </div>
   );

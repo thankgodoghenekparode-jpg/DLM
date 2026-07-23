@@ -4,9 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/shared/Button";
-import AddressMapPicker from "@/components/shared/AddressMapPicker";
 import { Eye, EyeOff, Upload, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
 
 const STEPS = ["Personal Info", "Company Info", "KYC"];
 
@@ -22,41 +20,13 @@ export default function CompanyRegisterPage() {
     regNumber: "",
     companyAddress: "",
     companyPhone: "",
-    branchLatitude: "",
-    branchLongitude: "",
     cacDoc: null,
-    addressDoc: null,
-    adminIdDoc: null,
   });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
-
-  const buildPayload = () => ({
-    companyName: form.companyName,
-    phone: form.companyPhone,
-    email: form.personalEmail,
-    address: form.companyAddress,
-    cacRegistrationNumber: form.regNumber,
-    cacCertificate: { fileName: form.cacDoc?.name || "pending.pdf", fileUrl: "https://pending-upload.dlm.com/certificate.pdf" },
-    primaryContact: {
-      fullName: form.fullName,
-      roleTitle: "Admin",
-      phone: form.phone,
-      email: form.personalEmail,
-    },
-    password: form.password,
-    primaryBranch: {
-      name: "Main Branch",
-      address: form.companyAddress,
-      geolocation: {
-        latitude: parseFloat(form.branchLatitude) || 6.5244,
-        longitude: parseFloat(form.branchLongitude) || 3.3792,
-      },
-    },
-  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,10 +38,50 @@ export default function CompanyRegisterPage() {
     setLoading(true);
     setError("");
     try {
-      await api.post("/tenants/register", buildPayload());
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+      let cacCertificate = undefined;
+      if (form.cacDoc) {
+        const uploadFd = new FormData();
+        uploadFd.append("file", form.cacDoc);
+        uploadFd.append("folder", "cac-certificates");
+        const uploadRes = await fetch(`${API_BASE}/upload`, { method: "POST", body: uploadFd });
+        if (!uploadRes.ok) {
+          const uploadData = await uploadRes.json().catch(() => null);
+          throw new Error(uploadData?.message || "Failed to upload CAC certificate");
+        }
+        const uploaded = await uploadRes.json();
+        cacCertificate = { fileName: uploaded.fileName, fileUrl: uploaded.url, mimeType: uploaded.mimeType, sizeBytes: uploaded.sizeBytes };
+      }
+
+      const body = {
+        companyName: form.companyName,
+        phone: form.companyPhone,
+        email: form.personalEmail,
+        address: form.companyAddress,
+        cacRegistrationNumber: form.regNumber,
+        password: form.password,
+        primaryContact: { fullName: form.fullName, roleTitle: "Admin", phone: form.phone, email: form.personalEmail },
+        primaryBranch: { name: "Main Branch", address: form.companyAddress },
+      };
+      if (cacCertificate) body.cacCertificate = cacCertificate;
+
+      const res = await fetch(`${API_BASE}/tenants/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const details = data?.details?.issues?.map((i) => {
+          const path = Array.isArray(i.path) ? i.path.join(".") : "";
+          return path ? `${path}: ${i.message}` : i.message;
+        }).filter(Boolean).join("; ");
+        throw new Error(details || data?.message || "Registration failed");
+      }
       router.push("/company/login");
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || "Registration failed. Please try again.");
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -141,38 +151,23 @@ export default function CompanyRegisterPage() {
                 <input type="tel" value={form.companyPhone} onChange={(e) => update("companyPhone", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" required />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Branch Address & Location *</label>
-                <AddressMapPicker
-                  address={form.companyAddress}
-                  latitude={form.branchLatitude ? Number(form.branchLatitude) : undefined}
-                  longitude={form.branchLongitude ? Number(form.branchLongitude) : undefined}
-                  onChange={({ address, latitude, longitude }) => setForm((prev) => ({ ...prev, companyAddress: address, branchLatitude: String(latitude), branchLongitude: String(longitude) }))}
-                  required
-                />
+                <label className="text-xs text-gray-500">Branch Address *</label>
+                <input type="text" value={form.companyAddress} onChange={(e) => update("companyAddress", e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" required />
               </div>
             </>
           )}
 
           {step === 3 && (
             <div className="space-y-4">
-              <p className="text-xs text-gray-500">Upload the following documents for KYC verification.</p>
-              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
-                Note: Document uploads will be processed separately after registration.
-              </p>
-              {[
-                { label: "CAC Business Registration *", key: "cacDoc" },
-                { label: "Proof of Address *", key: "addressDoc" },
-                { label: "Admin ID *", key: "adminIdDoc" },
-              ].map((doc) => (
-                <div key={doc.key}>
-                  <label className="text-xs text-gray-500 mb-1 block">{doc.label}</label>
-                  <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">
-                    <Upload size={16} className="text-gray-400" />
-                    <span className={form[doc.key] ? "text-gray-900" : "text-gray-400"}>{form[doc.key] ? form[doc.key].name : "Upload file"}</span>
-                    <input type="file" className="hidden" accept=".pdf,.jpg,.png" onChange={(e) => update(doc.key, e.target.files[0])} />
-                  </label>
-                </div>
-              ))}
+              <p className="text-xs text-gray-500">Upload your CAC Business Registration certificate.</p>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">CAC Certificate *</label>
+                <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">
+                  <Upload size={16} className="text-gray-400" />
+                  <span className={form.cacDoc ? "text-gray-900" : "text-gray-400"}>{form.cacDoc ? form.cacDoc.name : "Upload file (PDF, JPG, PNG)"}</span>
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.png" onChange={(e) => update("cacDoc", e.target.files[0])} />
+                </label>
+              </div>
             </div>
           )}
 
