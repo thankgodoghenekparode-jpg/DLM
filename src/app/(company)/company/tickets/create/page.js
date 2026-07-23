@@ -244,6 +244,12 @@ export default function CreateTicketPage() {
 
       {step === 2 && (
         <div className="space-y-4">
+          {createdTicketNumber && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-gray-500 mb-1">Ticket Number</p>
+              <p className="text-lg font-bold font-mono text-primary">{createdTicketNumber}</p>
+            </div>
+          )}
           {items.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-3">
