@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { LayoutDashboard, Truck, User, Ticket, MapPin, BarChart3, Wallet, Users, Building2, FileEdit, Bell, Settings, Store, PackagePlus, ChevronDown, BriefcaseBusiness, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Truck, User, Ticket, MapPin, BarChart3, Wallet, Users, Building2, FileEdit, Bell, Settings, Store, ChevronDown, BriefcaseBusiness, ShieldCheck, Container } from "lucide-react";
 
 const NAV_GROUPS = [
   {
@@ -14,13 +14,13 @@ const NAV_GROUPS = [
     defaultOpen: true,
     items: [
       { label: "Dashboard", href: "/company/dashboard", icon: LayoutDashboard, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "DISPATCH_MANAGER", "BRANCH_ADMIN"] },
-      { label: "Create Parcel", href: "/company/tickets/create", icon: PackagePlus, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "DISPATCH_MANAGER", "BRANCH_ADMIN"] },
     ],
   },
   {
     label: "Operations",
     icon: BriefcaseBusiness,
     items: [
+      { label: "Carriage", href: "/company/carriage", icon: Container, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "DISPATCH_MANAGER", "BRANCH_ADMIN"] },
       { label: "Vehicles", href: "/company/fleet", icon: Truck, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "BRANCH_ADMIN"] },
       { label: "Drivers", href: "/company/drivers", icon: User, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "DISPATCH_MANAGER", "BRANCH_ADMIN"] },
       { label: "Tickets", href: "/company/tickets", icon: Ticket, roles: ["COMPANY_ADMIN", "FLEET_MANAGER", "DISPATCH_MANAGER", "BRANCH_ADMIN"] },

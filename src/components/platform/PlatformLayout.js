@@ -19,49 +19,40 @@ function AuthGuard({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const isLogin = pathname === "/platform/login";
-  const [redirecting, setRedirecting] = useState(false);
-
-  const hasPlatformAccess = isAuthenticated && user?.role && (ROLE_PERMISSIONS[user.role] || []).some((p) => p.startsWith("platform:"));
-  const hasRequiredPerm = hasPlatformAccess && (ROLE_PERMISSIONS[user.role] || []).includes(getPermissionFromPath(pathname));
+  const permissions = ROLE_PERMISSIONS[user?.role] || [];
+  const hasPlatformAccess = isAuthenticated && permissions.some((permission) => permission.startsWith("platform:"));
+  const hasRequiredPerm = hasPlatformAccess && permissions.includes(getPermissionFromPath(pathname));
+  const shouldRedirect = !loading && (
+    (!isAuthenticated && !isLogin) ||
+    (isAuthenticated && !hasPlatformAccess) ||
+    (isAuthenticated && isLogin) ||
+    (hasPlatformAccess && !isLogin && !hasRequiredPerm)
+  );
 
   useEffect(() => {
     if (loading) return;
 
     if (!isAuthenticated && !isLogin) {
-      setRedirecting(true);
       router.replace("/platform/login");
       return;
     }
 
-    if (!isAuthenticated) {
-      setRedirecting(false);
-      return;
-    }
-
-    const perms = ROLE_PERMISSIONS[user?.role] || [];
-    if (!perms.some((p) => p.startsWith("platform:"))) {
-      setRedirecting(true);
+    if (isAuthenticated && !hasPlatformAccess) {
       router.replace("/platform/login");
       return;
     }
 
-    if (isLogin) {
-      setRedirecting(true);
+    if (isAuthenticated && isLogin) {
       router.replace("/platform/dashboard");
       return;
     }
 
-    const required = getPermissionFromPath(pathname);
-    if (!perms.includes(required)) {
-      setRedirecting(true);
+    if (hasPlatformAccess && !hasRequiredPerm) {
       router.replace("/platform/dashboard");
-      return;
     }
+  }, [loading, isAuthenticated, isLogin, hasPlatformAccess, hasRequiredPerm, router]);
 
-    setRedirecting(false);
-  }, [loading, isAuthenticated, isLogin, user, router, pathname]);
-
-  if (loading || redirecting) {
+  if (loading || shouldRedirect) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-gray-400" size={28} />

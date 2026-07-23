@@ -146,10 +146,10 @@ export function getValueByLabel(list, label) {
 export const ROLE_PERMISSIONS = {
   SUPER_ADMIN: ["platform:dashboard", "platform:companies", "platform:change-requests", "platform:users", "platform:wallets", "platform:audit-log", "platform:settings", "platform:profile"],
   PLATFORM_SUPPORT: ["platform:dashboard", "platform:companies", "platform:change-requests", "platform:wallets", "platform:audit-log", "platform:profile"],
-  COMPANY_ADMIN: ["company:dashboard", "company:create-parcel", "company:fleet", "company:drivers", "company:tickets", "company:tracker", "company:reports", "company:wallet", "company:branches", "company:users", "company:profile", "company:change-requests", "company:notifications", "company:settings"],
-  FLEET_MANAGER: ["company:dashboard", "company:create-parcel", "company:fleet", "company:drivers", "company:tickets", "company:tracker", "company:reports", "company:notifications"],
-  DISPATCH_MANAGER: ["company:dashboard", "company:create-parcel", "company:drivers", "company:tickets", "company:tracker", "company:notifications"],
-  BRANCH_ADMIN: ["company:dashboard", "company:create-parcel", "company:fleet", "company:drivers", "company:tickets", "company:tracker", "company:notifications"],
+  COMPANY_ADMIN: ["company:dashboard", "company:create-parcel", "company:carriage", "company:fleet", "company:drivers", "company:tickets", "company:tracker", "company:reports", "company:wallet", "company:branches", "company:users", "company:profile", "company:change-requests", "company:notifications", "company:settings"],
+  FLEET_MANAGER: ["company:dashboard", "company:create-parcel", "company:carriage", "company:fleet", "company:drivers", "company:tickets", "company:tracker", "company:reports", "company:notifications"],
+  DISPATCH_MANAGER: ["company:dashboard", "company:create-parcel", "company:carriage", "company:drivers", "company:tickets", "company:tracker", "company:notifications"],
+  BRANCH_ADMIN: ["company:dashboard", "company:create-parcel", "company:carriage", "company:fleet", "company:drivers", "company:tickets", "company:tracker", "company:notifications"],
   DRIVER: ["driver:trips", "driver:history", "driver:profile", "driver:notifications"],
 };
 
