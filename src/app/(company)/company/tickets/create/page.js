@@ -66,6 +66,7 @@ export default function CreateTicketPage() {
   const [selectedDriverId, setSelectedDriverId] = useState("");
 
   const [createdTicketId, setCreatedTicketId] = useState(null);
+  const [createdTicketNumber, setCreatedTicketNumber] = useState(null);
 
   useEffect(() => {
     if (!user?.tenantId) return;
@@ -134,6 +135,7 @@ export default function CreateTicketPage() {
       };
       const ticket = await api.post("/tickets", body);
       setCreatedTicketId(ticket.id);
+      setCreatedTicketNumber(ticket.ticketNumber);
       setStep(2);
     } catch (err) {
       setError(err.message || "Failed to create ticket");
@@ -335,6 +337,12 @@ export default function CreateTicketPage() {
 
       {step === 3 && (
         <div className="space-y-4">
+          {createdTicketNumber && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-gray-500 mb-1">Ticket Number</p>
+              <p className="text-lg font-bold font-mono text-primary">{createdTicketNumber}</p>
+            </div>
+          )}
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
             <h3 className="text-sm font-semibold text-gray-900">Assign Driver & Vehicle</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
