@@ -3,6 +3,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 class ApiClient {
   constructor() {
     this.baseUrl = API_BASE;
+    this._onSessionExpired = null;
+  }
+
+  onSessionExpired(cb) {
+    this._onSessionExpired = cb;
   }
 
   getToken() {
@@ -46,17 +51,31 @@ class ApiClient {
     }
   }
 
-  async request(method, path, body) {
+  async request(method, path, body, retries = 0) {
     const token = this.getToken();
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    let res;
+    try {
+      res = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timeout);
+      if (retries < 1 && (err.name === "AbortError" || err.message?.includes("fetch"))) {
+        return this.request(method, path, body, retries + 1);
+      }
+      throw err;
+    }
+    clearTimeout(timeout);
 
     if (res.status === 401 || res.status === 403) {
       const session = this.getSession();
@@ -87,15 +106,12 @@ class ApiClient {
           // refresh failed, fall through
         }
         this.clearSession();
-        if (typeof window !== "undefined") {
-          const p = window.location.pathname;
-          if (p.startsWith("/platform")) window.location.href = "/platform/login";
-          else if (p.startsWith("/driver")) window.location.href = "/driver/login";
-          else window.location.href = "/company/login";
-        }
+        if (this._onSessionExpired) this._onSessionExpired();
         throw new Error("Session expired");
       }
       // No session — let normal error handling process the 401/403 response
+      this.clearSession();
+      if (this._onSessionExpired) this._onSessionExpired();
     }
 
     if (!res.ok) {

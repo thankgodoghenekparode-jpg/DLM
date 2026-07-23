@@ -18,27 +18,36 @@ export default function PlatformDashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
-      const [summaryData, tenantData, userData] = await Promise.all([
-        api.get("/metrics/platform-summary").catch(() => null),
-        api.get("/platform/tenants").catch(() => []),
-        api.get("/platform/users").catch(() => []),
-      ]);
-      if (summaryData) {
-        const metricMap = {};
-        (summaryData.metrics || []).forEach((m) => { metricMap[m.label] = m.value; });
-        setSummary({
-          tenantCount: metricMap["Total Companies"] || 0,
-          activeSubscriptions: metricMap["Active Subscriptions"] || 0,
-          monthlyRevenue: metricMap["Monthly Revenue"] || 0,
-        });
+      try {
+        const [summaryData, tenantData, userData] = await Promise.allSettled([
+          api.get("/metrics/platform-summary"),
+          api.get("/platform/tenants"),
+          api.get("/platform/users"),
+        ]);
+        if (cancelled) return;
+        const summaryVal = summaryData.status === "fulfilled" ? summaryData.value : null;
+        const tenantVal = tenantData.status === "fulfilled" ? tenantData.value : [];
+        const userVal = userData.status === "fulfilled" ? userData.value : [];
+        if (summaryVal) {
+          const metricMap = {};
+          (summaryVal.metrics || []).forEach((m) => { metricMap[m.label] = m.value; });
+          setSummary({
+            tenantCount: metricMap["Total Companies"] || 0,
+            activeSubscriptions: metricMap["Active Subscriptions"] || 0,
+            monthlyRevenue: metricMap["Monthly Revenue"] || 0,
+          });
+        }
+        setTenants(Array.isArray(tenantVal) ? tenantVal : []);
+        setStaffCount(Array.isArray(userVal) ? userVal.filter((u) => u.role !== "SUPER_ADMIN").length : 0);
+        setScorecards([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setTenants(Array.isArray(tenantData) ? tenantData : []);
-      setStaffCount(Array.isArray(userData) ? userData.filter((u) => u.role !== "SUPER_ADMIN").length : 0);
-      setScorecards([]);
-      setLoading(false);
     };
     load();
+    return () => { cancelled = true; };
   }, []);
 
   const columns = [

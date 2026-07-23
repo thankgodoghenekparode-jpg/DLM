@@ -11,8 +11,18 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    api.onSessionExpired(() => {
+      setUser(null);
+      if (typeof window !== "undefined") {
+        const p = window.location.pathname;
+        if (p.startsWith("/platform")) window.location.href = "/platform/login";
+        else if (p.startsWith("/driver")) window.location.href = "/driver/login";
+        else window.location.href = "/company/login";
+      }
+    });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
+    return () => api.onSessionExpired(null);
   }, []);
 
   const login = useCallback(async (identifier, password, endpoint = "/auth/company/login") => {
