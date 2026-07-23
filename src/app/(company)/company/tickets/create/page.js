@@ -158,7 +158,7 @@ export default function CreateTicketPage() {
         <button onClick={() => router.push("/company/tickets")} className="text-sm text-gray-500 hover:text-gray-700 mb-2 flex items-center gap-1">
           <ArrowLeft size={14} /> Tickets
         </button>
-        <h1 className="text-xl font-bold text-gray-900">New Waybill</h1>
+        <h1 className="text-xl font-bold text-gray-900">Add Parcel</h1>
         <p className="text-sm text-gray-500 mt-1">Fill in details and click Add to create a waybill per item</p>
       </div>
 
