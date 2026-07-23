@@ -26,22 +26,39 @@ function AuthGuard({ children }) {
 
   useEffect(() => {
     if (loading) return;
+
     if (!isAuthenticated && !isLogin) {
       setRedirecting(true);
       router.replace("/platform/login");
-    } else if (isAuthenticated && user?.role) {
-      const perms = ROLE_PERMISSIONS[user.role] || [];
-      if (!perms.some((p) => p.startsWith("platform:"))) {
-        setRedirecting(true);
-        router.replace("/platform/login");
-      } else {
-        const required = getPermissionFromPath(pathname);
-        if (!perms.includes(required)) {
-          setRedirecting(true);
-          router.replace("/platform/dashboard");
-        }
-      }
+      return;
     }
+
+    if (!isAuthenticated) {
+      setRedirecting(false);
+      return;
+    }
+
+    const perms = ROLE_PERMISSIONS[user?.role] || [];
+    if (!perms.some((p) => p.startsWith("platform:"))) {
+      setRedirecting(true);
+      router.replace("/platform/login");
+      return;
+    }
+
+    if (isLogin) {
+      setRedirecting(true);
+      router.replace("/platform/dashboard");
+      return;
+    }
+
+    const required = getPermissionFromPath(pathname);
+    if (!perms.includes(required)) {
+      setRedirecting(true);
+      router.replace("/platform/dashboard");
+      return;
+    }
+
+    setRedirecting(false);
   }, [loading, isAuthenticated, isLogin, user, router, pathname]);
 
   if (loading || redirecting) {
