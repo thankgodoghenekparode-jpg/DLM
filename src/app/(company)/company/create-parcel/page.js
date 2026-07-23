@@ -8,7 +8,7 @@ export default function CreateParcelPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/company/tickets/create");
+    router.replace("/company/carriage/add-parcel");
   }, [router]);
 
   return (

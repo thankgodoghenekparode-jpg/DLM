@@ -153,7 +153,7 @@ export default function TicketsPage() {
           <h1 className="text-xl font-bold text-gray-900">Tickets Board</h1>
           <p className="text-sm text-gray-500 mt-1">Manage all job orders</p>
         </div>
-        <Link href="/company/tickets/create">
+        <Link href="/company/carriage/add-parcel">
           <Button><Plus size={16} className="mr-1" /> New Ticket</Button>
         </Link>
       </div>
