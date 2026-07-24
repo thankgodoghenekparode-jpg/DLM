@@ -50,8 +50,8 @@ export default function AddParcelModal({ carriage, tickets, loadedTicketIds, onC
               <Package className="mx-auto text-gray-300" size={30} />
               <p className="mt-2 text-sm font-medium text-gray-800">No matching parcels waiting</p>
               <p className="mx-auto mt-1 max-w-sm text-xs text-gray-500">Create a parcel for this route, then return here to load it.</p>
-              <Link href="/company/carriage/add-parcel" className="mt-4 inline-flex">
-                <Button><Plus className="mr-1.5" size={15} /> Create parcel</Button>
+              <Link href="/company/carriage" className="mt-4 inline-flex">
+                <Button><Plus className="mr-1.5" size={15} /> Open carriage</Button>
               </Link>
             </div>
           ) : available.map((ticket) => (

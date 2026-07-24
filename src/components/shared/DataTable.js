@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import Button from "./Button";
 import Input from "./Input";
-import Select from "./Select";
 
-export default function DataTable({ columns, data, searchable = false, searchPlaceholder = "Search...", actions, onRowClick, rowClassName }) {
+export default function DataTable({ columns, data, searchable = false, searchPlaceholder = "Search...", actions, onRowClick, rowClassName, getSearchValue }) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState("asc");
@@ -17,11 +16,17 @@ export default function DataTable({ columns, data, searchable = false, searchPla
     const q = search.toLowerCase();
     return data.filter((row) =>
       columns.some((col) => {
-        const val = col.accessor ? row[col.accessor] : "";
-        return String(val).toLowerCase().includes(q);
+        const value = typeof getSearchValue === "function"
+          ? getSearchValue(row, col)
+          : typeof col.searchValue === "function"
+            ? col.searchValue(row)
+            : col.accessor
+              ? row[col.accessor]
+              : "";
+        return String(value ?? "").toLowerCase().includes(q);
       })
     );
-  }, [data, search, columns, searchable]);
+  }, [columns, data, getSearchValue, search, searchable]);
 
   const sorted = useMemo(() => {
     if (!sortKey) return filtered;
@@ -33,7 +38,7 @@ export default function DataTable({ columns, data, searchable = false, searchPla
       if (av > bv) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortDir, sortKey]);
 
   const totalPages = Math.ceil(sorted.length / pageSize);
   const paginated = sorted.slice(page * pageSize, (page + 1) * pageSize);
@@ -54,7 +59,7 @@ export default function DataTable({ columns, data, searchable = false, searchPla
           <Input placeholder={searchPlaceholder} value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
         </div>
       )}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="min-w-[700px] w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
@@ -81,7 +86,7 @@ export default function DataTable({ columns, data, searchable = false, searchPla
         </table>
       </div>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="mt-4 flex items-center justify-between">
           <p className="text-sm text-gray-500">Page {page + 1} of {totalPages}</p>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Previous</Button>

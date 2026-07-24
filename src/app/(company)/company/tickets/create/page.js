@@ -8,7 +8,7 @@ export default function CreateTicketRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/company/carriage/add-parcel");
+    router.replace("/company/carriage");
   }, [router]);
 
   return (

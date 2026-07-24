@@ -61,8 +61,8 @@ export default function ParcelCreatedPage({ params }) {
     return (
       <div className="max-w-xl mx-auto bg-white rounded-xl border border-gray-200 p-6 text-center">
         <p className="text-sm text-red-600">{error || "Generated ticket was not found."}</p>
-        <Link href="/company/carriage/add-parcel" className="inline-flex mt-4">
-          <Button>Create Parcel</Button>
+        <Link href="/company/carriage" className="inline-flex mt-4">
+          <Button>Open Carriage</Button>
         </Link>
       </div>
     );
@@ -154,8 +154,8 @@ export default function ParcelCreatedPage({ params }) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 justify-end">
-        <Link href="/company/carriage/add-parcel">
-          <Button variant="secondary"><Plus size={16} className="mr-1" /> Create Another</Button>
+        <Link href="/company/carriage">
+          <Button variant="secondary"><Plus size={16} className="mr-1" /> Open Another Carriage</Button>
         </Link>
         <Link href={`/company/tickets/${ticket.id}`}>
           <Button><Truck size={16} className="mr-1" /> View Full Ticket</Button>

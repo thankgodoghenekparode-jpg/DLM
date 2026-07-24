@@ -5,9 +5,9 @@ import { PackagePlus, Wallet, BarChart3, Settings, ArrowRight } from "lucide-rea
 
 const QUICK_ACTIONS = [
   {
-    title: "Create Parcel",
-    description: "Start a new dispatch and generate a ticket number.",
-    href: "/company/carriage/add-parcel",
+    title: "Open Carriage",
+    description: "Start a new carriage and begin loading ticket IDs into it.",
+    href: "/company/carriage",
     icon: PackagePlus,
     color: "bg-primary text-white",
     iconWrap: "bg-white/20 text-white",
