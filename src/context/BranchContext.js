@@ -1,18 +1,39 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 const BranchContext = createContext(null);
 
-const BRANCHES = ["All Branches", "Lagos HQ", "Ibadan Depot"];
-
-export const BRANCH_OPTIONS = BRANCHES;
-
 export function BranchProvider({ children }) {
+  const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState("All Branches");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchBranches() {
+      try {
+        const me = await api.get("/auth/me");
+        if (me?.tenant?.branches?.length) {
+          const names = me.tenant.branches.map((b) => b.name || b);
+          setBranches(["All Branches", ...names]);
+        } else if (me?.branches?.length) {
+          const names = me.branches.map((b) => b.name || b);
+          setBranches(["All Branches", ...names]);
+        } else {
+          setBranches(["All Branches"]);
+        }
+      } catch {
+        setBranches(["All Branches"]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBranches();
+  }, []);
 
   return (
-    <BranchContext.Provider value={{ selectedBranch, setSelectedBranch, BRANCHES }}>
+    <BranchContext.Provider value={{ branches, selectedBranch, setSelectedBranch, loading }}>
       {children}
     </BranchContext.Provider>
   );

@@ -1,11 +1,57 @@
 "use client";
 
-import Button from "@/components/shared/Button";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 import { usePlatformSettings } from "@/lib/platformSettings";
-import { Globe, Receipt, CreditCard } from "lucide-react";
+import Button from "@/components/shared/Button";
+import { Globe, Receipt, CreditCard, CheckCircle, Loader2 } from "lucide-react";
 
 export default function CompanySettingsPage() {
-  const { settings } = usePlatformSettings();
+  const { settings, loading: settingsLoading } = usePlatformSettings();
+  const [currency, setCurrency] = useState("NGN");
+  const [timezone, setTimezone] = useState("WAT (UTC+1)");
+  const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCompanySettings() {
+      try {
+        const me = await api.get("/auth/me");
+        if (me?.tenant?.settings) {
+          if (me.tenant.settings.currency) setCurrency(me.tenant.settings.currency);
+          if (me.tenant.settings.timezone) setTimezone(me.tenant.settings.timezone);
+          if (me.tenant.settings.dateFormat) setDateFormat(me.tenant.settings.dateFormat);
+        }
+      } catch {
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCompanySettings();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.patch("/auth/me", { settings: { currency, timezone, dateFormat } });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      alert(err.message || "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading || settingsLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="animate-spin text-gray-400" size={24} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -17,9 +63,24 @@ export default function CompanySettingsPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2"><Globe size={16} /> Regional</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
-          <div><label className="text-xs text-gray-500">Currency</label><select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1"><option>NGN (₦)</option><option>USD ($)</option></select></div>
-          <div><label className="text-xs text-gray-500">Timezone</label><select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1"><option>WAT (UTC+1)</option></select></div>
-          <div><label className="text-xs text-gray-500">Date Format</label><select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1"><option>DD/MM/YYYY</option><option>MM/DD/YYYY</option></select></div>
+          <div>
+            <label className="text-xs text-gray-500">Currency</label>
+            <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1">
+              <option>NGN (₦)</option><option>USD ($)</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500">Timezone</label>
+            <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1">
+              <option>WAT (UTC+1)</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500">Date Format</label>
+            <select value={dateFormat} onChange={(e) => setDateFormat(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1">
+              <option>DD/MM/YYYY</option><option>MM/DD/YYYY</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -48,7 +109,10 @@ export default function CompanySettingsPage() {
         </div>
       </div>
 
-      <div className="flex justify-end"><Button onClick={() => alert("Settings saved")}>Save Settings</Button></div>
+      <div className="flex justify-end gap-3 items-center">
+        {saved && <span className="text-sm text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Settings saved</span>}
+        <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
+      </div>
     </div>
   );
 }

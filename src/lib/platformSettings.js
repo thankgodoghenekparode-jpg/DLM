@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 const defaultSettings = {
   feePerItem: 500,
@@ -12,13 +13,33 @@ const PlatformSettingsContext = createContext(null);
 
 export function PlatformSettingsProvider({ children }) {
   const [settings, setSettings] = useState(defaultSettings);
+  const [loading, setLoading] = useState(true);
 
-  const updateSettings = (updates) => {
-    setSettings((prev) => ({ ...prev, ...updates }));
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const data = await api.get("/platform/settings");
+        setSettings({
+          feePerItem: data.feePerItem ?? defaultSettings.feePerItem,
+          feePerTicket: data.feePerTicket ?? defaultSettings.feePerTicket,
+          paymentChannels: data.paymentChannels?.length ? data.paymentChannels : defaultSettings.paymentChannels,
+        });
+      } catch {
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSettings();
+  }, []);
+
+  const updateSettings = async (updates) => {
+    const data = await api.patch("/platform/settings", updates);
+    setSettings((prev) => ({ ...prev, ...data }));
+    return data;
   };
 
   return (
-    <PlatformSettingsContext.Provider value={{ settings, updateSettings }}>
+    <PlatformSettingsContext.Provider value={{ settings, updateSettings, loading }}>
       {children}
     </PlatformSettingsContext.Provider>
   );

@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 
 export default function CompanyHeader({ onMenuClick, onToggleCollapse }) {
   const { user, logout } = useAuth();
-  const { selectedBranch, setSelectedBranch, BRANCHES } = useBranch();
+  const { selectedBranch, setSelectedBranch, branches } = useBranch();
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -55,7 +55,7 @@ export default function CompanyHeader({ onMenuClick, onToggleCollapse }) {
             onChange={(e) => setSelectedBranch(e.target.value)}
             className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white max-w-[140px] sm:max-w-none"
           >
-            {BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
+            {branches.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         </div>
       </div>

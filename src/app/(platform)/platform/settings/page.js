@@ -1,16 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 import Button from "@/components/shared/Button";
-import { Globe, Bell, CreditCard, Receipt, CheckCircle } from "lucide-react";
+import { Globe, Bell, CreditCard, Receipt, CheckCircle, Loader2 } from "lucide-react";
 
 export default function PlatformSettingsPage() {
-  const [feePerItem, setFeePerItem] = useState("150");
-  const [feePerTicket, setFeePerTicket] = useState("200");
-  const [channels, setChannels] = useState(["Paystack"]);
+  const [feePerItem, setFeePerItem] = useState("");
+  const [feePerTicket, setFeePerTicket] = useState("");
+  const [channels, setChannels] = useState([]);
   const [currency, setCurrency] = useState("NGN");
   const [timezone, setTimezone] = useState("WAT (UTC+1)");
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const data = await api.get("/platform/settings");
+        setFeePerItem(String(data.feePerItem ?? ""));
+        setFeePerTicket(String(data.feePerTicket ?? ""));
+        setChannels(data.paymentChannels || []);
+        if (data.currency) setCurrency(data.currency);
+        if (data.timezone) setTimezone(data.timezone);
+      } catch {
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSettings();
+  }, []);
 
   const toggleChannel = (ch) => {
     setChannels((prev) =>
@@ -18,10 +38,32 @@ export default function PlatformSettingsPage() {
     );
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.patch("/platform/settings", {
+        feePerItem: Number(feePerItem),
+        feePerTicket: Number(feePerTicket),
+        paymentChannels: channels,
+        currency,
+        timezone,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      alert(err.message || "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="animate-spin text-gray-400" size={24} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -84,7 +126,7 @@ export default function PlatformSettingsPage() {
 
       <div className="flex justify-end gap-3 items-center">
         {saved && <span className="text-sm text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Settings saved</span>}
-        <Button onClick={handleSave}>Save Settings</Button>
+        <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
       </div>
     </div>
   );
