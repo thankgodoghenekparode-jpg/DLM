@@ -5,7 +5,7 @@ import DataTable from "@/components/shared/DataTable";
 import Button from "@/components/shared/Button";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Link from "next/link";
-import { Plus, LayoutGrid, List, Loader2, Truck } from "lucide-react";
+import { Plus, LayoutGrid, List, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { TICKET_STATUSES, TICKET_PRIORITIES, getLabel } from "@/lib/constants";
 
@@ -113,22 +113,6 @@ export default function TicketsPage() {
     return acc;
   }, {});
 
-  const vehicleLoads = Object.values(
-    filtered.reduce((acc, ticket) => {
-      const key = ticket._vehicleId || "unassigned";
-      if (!acc[key]) {
-        acc[key] = {
-          id: key,
-          label: ticket._vehiclePlate || "Unassigned vehicle",
-          driver: ticket._driverName || "No driver",
-          tickets: [],
-        };
-      }
-      acc[key].tickets.push(ticket);
-      return acc;
-    }, {})
-  );
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -162,39 +146,6 @@ export default function TicketsPage() {
         <button onClick={() => setView("kanban")} className={`p-2 rounded-lg ${view === "kanban" ? "bg-primary text-white" : "text-gray-600 hover:bg-gray-100"}`} title="Grid view"><LayoutGrid size={18} /></button>
         <button onClick={() => setView("table")} className={`p-2 rounded-lg ${view === "table" ? "bg-primary text-white" : "text-gray-600 hover:bg-gray-100"}`} title="List view"><List size={18} /></button>
       </div>
-
-      <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Truck size={16} /> Vehicle Loads</h2>
-            <p className="text-xs text-gray-500 mt-1">See tickets grouped under each vehicle.</p>
-          </div>
-          <span className="text-xs text-gray-500">{filtered.length} tickets</span>
-        </div>
-        {vehicleLoads.length === 0 ? (
-          <p className="text-sm text-gray-500">No tickets match the selected filters.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {vehicleLoads.map((load) => (
-              <div key={load.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-3 py-2">
-                  <p className="text-sm font-semibold text-gray-900">{load.label}</p>
-                  <p className="text-xs text-gray-500">{load.driver} - {load.tickets.length} ticket{load.tickets.length === 1 ? "" : "s"}</p>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {load.tickets.slice(0, 5).map((ticket) => (
-                    <Link key={ticket.id} href={`/company/tickets/${ticket.id}`} className="block px-3 py-2 hover:bg-gray-50">
-                      <p className="text-sm font-medium text-gray-900">{ticket.ticketNumber || ticket.id}</p>
-                      <p className="text-xs text-gray-500 truncate">{ticket.originAddress || "-"} {"->"} {ticket.destinationAddress || "-"}</p>
-                    </Link>
-                  ))}
-                  {load.tickets.length > 5 && <p className="px-3 py-2 text-xs text-gray-500">+{load.tickets.length - 5} more tickets</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
       <div className="flex gap-2 flex-wrap">
         {STATUS_KEYS.map((s) => (
